@@ -61,13 +61,13 @@ static mp_obj_t near_value_return(mp_obj_t value)
   if (mp_obj_is_str(value)) {
     size_t len = 0;
     const char *data = mp_obj_str_get_data(value, &len);
-    printf("near_value_return: str, %d, %s\n", (int)len, data);
+    // printf("near_value_return: str, %d, %s\n", (int)len, data);
     value_return(len, (uint64_t)data);
   }
   else {
     mp_buffer_info_t buffer_info = { 0 };
     mp_get_buffer_raise(value, &buffer_info, 0);
-    printf("near_value_return: bytes, %d, %s\n", (int)buffer_info.len, (const char*)buffer_info.buf);
+    // printf("near_value_return: bytes, %d, %s\n", (int)buffer_info.len, (const char*)buffer_info.buf);
     value_return(buffer_info.len, (uint64_t)buffer_info.buf);
   }
   return mp_const_none;
@@ -79,7 +79,7 @@ static mp_obj_t near_log_utf8(mp_obj_t msg)
   if (mp_obj_is_str(msg)) {
     size_t len = 0;
     const char *data = mp_obj_str_get_data(msg, &len);
-    printf("near_log_utf8: %d, %s\n", (int)len, data);
+    // printf("near_log_utf8: %d, %s\n", (int)len, data);
     log_utf8(len, (uint64_t)data);
   }
   return mp_const_none;

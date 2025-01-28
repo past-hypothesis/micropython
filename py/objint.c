@@ -388,7 +388,7 @@ mp_obj_t mp_obj_int_binary_op_extra_cases(mp_binary_op_t op, mp_obj_t lhs_in, mp
 }
 
 // this is a classmethod
-static mp_obj_t int_from_bytes(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t int_from_bytes(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     // TODO: Support signed param (assumes signed=False at the moment)
 
     // get the buffer info
@@ -398,6 +398,18 @@ static mp_obj_t int_from_bytes(size_t n_args, const mp_obj_t *args) {
     const byte *buf = (const byte *)bufinfo.buf;
     int delta = 1;
     bool big_endian = n_args < 3 || args[2] != MP_OBJ_NEW_QSTR(MP_QSTR_little);
+    mp_map_elem_t *byteorder_elem = mp_map_lookup(kwargs, MP_OBJ_NEW_QSTR(MP_QSTR_byteorder), MP_MAP_LOOKUP);
+    if (byteorder_elem != NULL) {
+        if (byteorder_elem->value == MP_OBJ_NEW_QSTR(MP_QSTR_little)) {
+            big_endian = false;
+        }
+        else if (byteorder_elem->value == MP_OBJ_NEW_QSTR(MP_QSTR_big)) {
+            big_endian = true;
+        }
+        else {
+            mp_raise_type_arg(&mp_type_ValueError, byteorder_elem->value);
+        }
+    }
     if (!big_endian) {
         buf += bufinfo.len - 1;
         delta = -1;
@@ -417,7 +429,7 @@ static mp_obj_t int_from_bytes(size_t n_args, const mp_obj_t *args) {
     return mp_obj_new_int_from_uint(value);
 }
 
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(int_from_bytes_fun_obj, 2, 4, int_from_bytes);
+static MP_DEFINE_CONST_FUN_OBJ_KW(int_from_bytes_fun_obj, 2, int_from_bytes);
 static MP_DEFINE_CONST_CLASSMETHOD_OBJ(int_from_bytes_obj, MP_ROM_PTR(&int_from_bytes_fun_obj));
 
 static mp_obj_t int_to_bytes(size_t n_args, const mp_obj_t *args) {

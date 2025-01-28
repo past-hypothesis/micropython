@@ -25,10 +25,12 @@
  */
 
 #include "py/mpstate.h"
+#include "py/runtime.h"
 
 #if MICROPY_NLR_SETJMP
 
 void nlr_jump(void *val) {
+    mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(val));
     MP_NLR_JUMP_HEAD(val, top);
     longjmp(top->jmpbuf, 1);
 }

@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <setjmp.h>
 
@@ -47,6 +48,41 @@
 
 #define PYTHON_HEAP_SIZE 32768
 #define PYTHON_STACK_SIZE 16384
+
+EM_IMPORT(log_utf8) void log_utf8(uint64_t len, uint64_t ptr);
+
+static void log_utf8_c(const char *str)
+{
+  log_utf8(strlen(str), (uint64_t)str);
+}
+
+static char log_buffer[120] = { 0 };
+static size_t log_buffer_len = 0;
+
+static void log_buffer_flush()
+{
+  static int log_count = 0;
+  if (log_buffer_len > 0 && log_buffer_len <= sizeof(log_buffer)) {
+    if (++log_count > 250) {
+      log_utf8(log_buffer_len, (uint64_t)log_buffer);
+    }
+  }
+  log_buffer_len = 0;    
+}
+
+static void log_buffer_append(char c)
+{
+  if (log_buffer_len + 1 >= sizeof(log_buffer) 
+#if !defined(MICROPY_DEBUG_VERBOSE)
+      || c == '\n'
+#endif // !defined(MICROPY_DEBUG_VERBOSE)
+     ) {
+    log_buffer_flush();
+  }
+  if (c != '\n' || log_buffer_len != 0) {
+    log_buffer[log_buffer_len++] = c;
+  }
+}
 
 void emscripten_scan_registers(em_scan_func func)
 {
@@ -73,6 +109,8 @@ int setjmp(jmp_buf buf)
 
 NORETURN void longjmp(jmp_buf buf, int value)
 {
+  log_buffer_flush();
+  log_utf8_c("longjmp");
   abort();
 }
 
@@ -84,6 +122,7 @@ NORETURN void longjmp(jmp_buf buf, int value)
 
 NORETURN void __wasi_proc_exit(__wasi_exitcode_t code)
 {
+  log_buffer_flush();
   abort();
 }
 
@@ -102,19 +141,27 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const __wasi_ciovec_t* iovs, size
 {
   *nwritten = 0;
   for (size_t i = 0; i != iovs_len; ++i) {
+    // log_utf8(iovs[i].buf_len, (uint64_t)iovs[i].buf);
+    for (size_t j = 0; j != iovs[i].buf_len; ++j) {
+      log_buffer_append(iovs[i].buf[j]);
+    }
     *nwritten += iovs[i].buf_len;
   }
   return 0;
 }
 
-// int DEBUG_printf(const char* fmt, ...)
-// {
-//   va_list ap;
-//   va_start(ap, fmt);
-//   int ret = vprintf(fmt, ap);
-//   va_end(ap);
-//   return ret;
-// }
+void setTempRet0(int32_t v)
+{
+}
+
+int DEBUG_printf(const char* fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  int ret = vprintf(fmt, ap);
+  va_end(ap);
+  return ret;
+}
 
 void run_frozen_fn(const char *file_name, const char *fn_name)
 {
@@ -140,11 +187,7 @@ void run_frozen_fn(const char *file_name, const char *fn_name)
   // else {
   //   // handle_uncaught_exception(nlr.ret_val);
   // }
-}
-
-void hello_world()
-{
-  run_frozen_fn("contract.py", "hello_world");
+  log_buffer_flush();
 }
 
 int main()
@@ -209,11 +252,31 @@ mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) 
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 #endif
 
+// todo: a function which will print exc to log_utf8 to be called from nlr_raise for debugging
+//       (we can do this in our own nlr_x.c impl too)
+//void nlr_jump(void *val) {
+//    MP_NLR_JUMP_HEAD(val, top);
+//    longjmp(top->jmpbuf, 1);
+//}
+
+//static void stderr_print_strn(void *env, const char *str, size_t len) {
+//    (void)env;
+//    write(2, str, len);
+//}
+
+//const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
+
+//    mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(exc));
+  
 void nlr_jump_fail(void *val) {
+    log_buffer_flush();
+    log_utf8_c("nlr_jump_fail");
     abort();
 }
 
 void NORETURN __fatal_error(const char *msg) {
+    log_buffer_flush();
+    log_utf8_c(msg);
     abort();
 }
 

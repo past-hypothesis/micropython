@@ -9,6 +9,8 @@ include ../../py/mkenv.mk
 # Use the default frozen manifest, variants may override this.
 FROZEN_MANIFEST ?= manifest.py
 
+OUTPUT_WASM ?= $(BUILD)/contract.wasm
+
 # Qstr definitions (must come before including py.mk).
 QSTR_DEFS = qstrdefsport.h
 
@@ -27,14 +29,15 @@ INC += -I$(TOP)
 INC += -I$(BUILD)
 
 # List of functions to be exported from the WASM assembly (prefixed with _)
-EXPORTED_FUNCTIONS += "_hello_world"
+#EXPORTED_FUNCTIONS += "_hello_world"
 
 CFLAGS += -std=c99 -Wall -Werror -Wdouble-promotion -Wfloat-conversion 
 CFLAGS += -fdata-sections -ffunction-sections -sSUPPORT_LONGJMP=0 -mno-bulk-memory -mno-nontrapping-fptoint
 CFLAGS += -O2 -DNDEBUG
+# CFLAGS += -O2 -DMICROPY_DEBUG_VERBOSE
 CFLAGS += $(INC)
 
-LDFLAGS += -Wl,--gc-sections -sSTANDALONE_WASM=1 -sSINGLE_FILE=1 -sALLOW_MEMORY_GROWTH=0 -sWASM_BIGINT=1 -sSUPPORT_LONGJMP=0
+LDFLAGS += -Wl,--gc-sections -sSTANDALONE_WASM=1 -sSINGLE_FILE=1 -sALLOW_MEMORY_GROWTH=0 -sWASM_BIGINT=1 -sSUPPORT_LONGJMP=0 -sERROR_ON_UNDEFINED_SYMBOLS=0
 LDFLAGS += -sEXPORTED_FUNCTIONS="$(EXPORTED_FUNCTIONS)"
 
 ################################################################################
@@ -52,7 +55,7 @@ SRC_SHARED = $(addprefix shared/,\
 SRC_C += \
 	main.c \
 	mphalport.c \
-  modnear.c
+	modnear.c
 
 # List of sources for qstr extraction.
 SRC_QSTR += $(SRC_C) $(SRC_SHARED)
@@ -60,15 +63,16 @@ SRC_QSTR += $(SRC_C) $(SRC_SHARED)
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_SHARED:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+OBJ += $(SRC_C_GENERATED:.c=.o)
 
 ################################################################################
 # Main targets.
 
 .PHONY: all repl min test test_min
 
-all: $(BUILD)/contract.wasm
+all: $(OUTPUT_WASM)
 
-$(BUILD)/contract.wasm: $(OBJ) 
+$(OUTPUT_WASM): $(OBJ)
 	$(ECHO) "LINK $@"
 	$(Q)emcc $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ)
 
