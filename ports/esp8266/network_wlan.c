@@ -201,7 +201,7 @@ static void esp_scan_cb(void *result, STATUS status) {
     if (result && status == 0) {
         // we need to catch any memory errors
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             for (struct bss_info *bs = result; bs; bs = STAILQ_NEXT(bs, next)) {
                 mp_obj_tuple_t *t = mp_obj_new_tuple(6, NULL);
                 #if 1
@@ -219,7 +219,7 @@ static void esp_scan_cb(void *result, STATUS status) {
                 mp_obj_list_append(*esp_scan_list, MP_OBJ_FROM_PTR(t));
             }
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
             // indicate error
             *esp_scan_list = MP_OBJ_NULL;

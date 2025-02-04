@@ -79,11 +79,11 @@ static void usbd_pend_exception(mp_obj_t exception) {
 // Handles any exception using usbd_pend_exception()
 static mp_obj_t usbd_callback_function_n(mp_obj_t fun, size_t n_args, const mp_obj_t *args) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t ret = mp_call_function_n_kw(fun, n_args, 0, args);
         nlr_pop();
         return ret;
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         usbd_pend_exception(MP_OBJ_FROM_PTR(nlr.ret_val));
         return MP_OBJ_NULL;
     }
@@ -132,13 +132,13 @@ const char *mp_usbd_runtime_string_cb(uint8_t index) {
         return NULL;
     }
 
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t res = mp_obj_subscr(usbd->desc_strs, mp_obj_new_int(index), MP_OBJ_SENTINEL);
         nlr_pop();
         if (res != mp_const_none) {
             return usbd_get_buffer_in_cb(res, MP_BUFFER_READ);
         }
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         mp_obj_t exception = MP_OBJ_FROM_PTR(nlr.ret_val);
         if (!(mp_obj_is_type(exception, &mp_type_KeyError) || mp_obj_is_type(exception, &mp_type_IndexError))) {
             // Don't print KeyError or IndexError, allowing dicts or lists to have missing entries.

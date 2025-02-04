@@ -75,7 +75,7 @@ static int parse_compile_execute(const void *source, mp_parse_input_kind_t input
 
     nlr_buf_t nlr;
     nlr.ret_val = NULL;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t module_fun;
         #if MICROPY_MODULE_FROZEN_MPY
         if (exec_flags & EXEC_FLAG_SOURCE_IS_RAW_CODE) {
@@ -124,7 +124,7 @@ static int parse_compile_execute(const void *source, mp_parse_input_kind_t input
         if (exec_flags & EXEC_FLAG_PRINT_EOF) {
             mp_hal_stdout_tx_strn("\x04", 1);
         }
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         mp_hal_set_interrupt_char(-1); // disable interrupt
         mp_handle_pending(false); // clear any pending exceptions (and run any callbacks)
@@ -570,10 +570,10 @@ friendly_repl_reset:
             nlr_buf_t nlr;
             printf("pyexec_repl: %p\n", x);
             mp_hal_set_interrupt_char(CHAR_CTRL_C);
-            if (nlr_push(&nlr) == 0) {
+            NLR_PUSH_BLOCK(nlr) {
                 for (;;) {
                 }
-            } else {
+            } NLR_PUSH_HANDLER(nlr) {
                 printf("break\n");
             }
         }

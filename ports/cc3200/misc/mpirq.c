@@ -122,11 +122,11 @@ void mp_irq_handler (mp_obj_t self_in) {
         // any memory allocations.
         gc_lock();
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_call_function_1(self->handler, self->parent);
             nlr_pop();
         }
-        else {
+        NLR_PUSH_HANDLER(nlr) {
             // uncaught exception; disable the callback so that it doesn't run again
             self->methods->disable (self->parent);
             self->handler = mp_const_none;

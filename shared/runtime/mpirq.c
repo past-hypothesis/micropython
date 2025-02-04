@@ -74,7 +74,7 @@ void mp_irq_handler(mp_irq_obj_t *self) {
             mp_sched_lock();
             gc_lock();
             nlr_buf_t nlr;
-            if (nlr_push(&nlr) == 0) {
+            NLR_PUSH_BLOCK(nlr) {
                 mp_call_function_1(self->handler, self->parent);
                 nlr_pop();
             } else {

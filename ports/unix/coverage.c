@@ -337,18 +337,18 @@ static mp_obj_t extra_coverage(void) {
 
         VSTR_FIXED(fix, 4);
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             vstr_add_str(&fix, "large");
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
 
         fix.len = fix.alloc;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             vstr_null_terminated_str(&fix);
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
     }
@@ -490,18 +490,18 @@ static mp_obj_t extra_coverage(void) {
 
         // mp_obj_int_get_uint_checked with negative small-int (should raise exception)
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_obj_int_get_uint_checked(MP_OBJ_NEW_SMALL_INT(-1));
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
 
         // mp_obj_int_get_uint_checked with negative big-int (should raise exception)
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_obj_int_get_uint_checked(mp_obj_new_int_from_ll(-2));
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
 
@@ -599,10 +599,10 @@ static mp_obj_t extra_coverage(void) {
         // setting the keyboard interrupt and raising it during mp_handle_pending
         mp_sched_keyboard_interrupt();
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_handle_pending(true);
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
 
@@ -614,10 +614,10 @@ static mp_obj_t extra_coverage(void) {
         // setting keyboard interrupt and a pending event (intr should be handled first)
         mp_sched_schedule(MP_OBJ_FROM_PTR(&mp_builtin_print_obj), MP_OBJ_NEW_SMALL_INT(10));
         mp_sched_keyboard_interrupt();
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_handle_pending(true);
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
         }
         mp_handle_pending(true);

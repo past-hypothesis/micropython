@@ -36,7 +36,7 @@
 #include <math.h>
 #endif
 
-static NORETURN void raise_exc(mp_obj_t exc, mp_lexer_t *lex) {
+static NLR_NORETURN void raise_exc(mp_obj_t exc, mp_lexer_t *lex) {
     // if lex!=NULL then the parser called us and we need to convert the
     // exception's type from ValueError to SyntaxError and add traceback info
     if (lex != NULL) {
@@ -164,6 +164,7 @@ value_error:
         raise_exc(exc, lex);
         #endif
     }
+    return NULL;
 }
 
 enum {
@@ -423,4 +424,6 @@ value_error:
     #else
     raise_exc(mp_obj_new_exception_msg(&mp_type_ValueError, MP_ERROR_TEXT("decimal numbers not supported")), lex);
     #endif
+
+    return NULL;
 }

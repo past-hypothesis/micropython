@@ -42,16 +42,15 @@
 #include "extmod/vfs.h"
 #include "extmod/vfs_posix.h"
 #include "shared/runtime/pyexec.h"
+#include "near_api.h"
 
-#include "emscripten.h"
-#include "wasi/api.h"
+#include <emscripten.h>
+#include <wasi/api.h>
 
 #define PYTHON_HEAP_SIZE 32768
 #define PYTHON_STACK_SIZE 16384
 
-EM_IMPORT(log_utf8) void log_utf8(uint64_t len, uint64_t ptr);
-
-static void log_utf8_c(const char *str)
+static void log_utf8_c(const char* str)
 {
   log_utf8(strlen(str), (uint64_t)str);
 }
@@ -61,27 +60,45 @@ static size_t log_buffer_len = 0;
 
 static void log_buffer_flush()
 {
+  static int skip_log_items = 0;
   static int log_count = 0;
   if (log_buffer_len > 0 && log_buffer_len <= sizeof(log_buffer)) {
-    if (++log_count > 250) {
+    if (++log_count > skip_log_items) {
       log_utf8(log_buffer_len, (uint64_t)log_buffer);
     }
   }
-  log_buffer_len = 0;    
+  log_buffer_len = 0;
 }
 
 static void log_buffer_append(char c)
 {
-  if (log_buffer_len + 1 >= sizeof(log_buffer) 
-#if !defined(MICROPY_DEBUG_VERBOSE)
-      || c == '\n'
-#endif // !defined(MICROPY_DEBUG_VERBOSE)
-     ) {
+  if (log_buffer_len + 1 >= sizeof(log_buffer)
+#if !MICROPY_DEBUG_VERBOSE
+    || c == '\n'
+#endif
+    ) {
     log_buffer_flush();
   }
-  if (c != '\n' || log_buffer_len != 0) {
+  if (c != '\n' 
+#if MICROPY_DEBUG_VERBOSE
+    || log_buffer_len != 0
+#endif
+  ) {
     log_buffer[log_buffer_len++] = c;
   }
+}
+
+NORETURN void near_abort_impl(const char *msg, const char *func, const char *filename, uint32_t line, uint32_t col)
+{
+  if (msg) {
+    printf("NEAR_ABORT(): '%s' at %s() (%s:%d), terminating\n", msg, func, filename, line);
+  }
+  else {
+    printf("NEAR_ABORT() called by %s() (%s:%d), terminating\n", func, filename, line);
+  }
+  log_buffer_flush();
+  // near_abort((uint32_t)msg, (uint32_t)filename, line, col); // this seems to result in an infinite loop
+  abort();
 }
 
 void emscripten_scan_registers(em_scan_func func)
@@ -110,20 +127,20 @@ int setjmp(jmp_buf buf)
 NORETURN void longjmp(jmp_buf buf, int value)
 {
   log_buffer_flush();
-  log_utf8_c("longjmp");
-  abort();
+  NEAR_ABORT();
 }
 
-// static int handle_uncaught_exception(mp_obj_base_t* exc)
-// {
-//   mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(exc));
-//   return 1;
-// }
+static int handle_uncaught_exception(mp_obj_base_t* exc)
+{
+  mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(exc));
+  log_buffer_flush();
+  NEAR_ABORT();
+}
 
 NORETURN void __wasi_proc_exit(__wasi_exitcode_t code)
 {
   log_buffer_flush();
-  abort();
+  NEAR_ABORT();
 }
 
 __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
@@ -141,7 +158,6 @@ __wasi_errno_t __wasi_fd_write(__wasi_fd_t fd, const __wasi_ciovec_t* iovs, size
 {
   *nwritten = 0;
   for (size_t i = 0; i != iovs_len; ++i) {
-    // log_utf8(iovs[i].buf_len, (uint64_t)iovs[i].buf);
     for (size_t j = 0; j != iovs[i].buf_len; ++j) {
       log_buffer_append(iovs[i].buf[j]);
     }
@@ -163,7 +179,7 @@ int DEBUG_printf(const char* fmt, ...)
   return ret;
 }
 
-void run_frozen_fn(const char *file_name, const char *fn_name)
+void run_frozen_fn(const char* file_name, const char* fn_name)
 {
 #if MICROPY_ENABLE_PYSTACK
   mp_obj_t* pystack = (mp_obj_t*)malloc(PYTHON_STACK_SIZE * sizeof(mp_obj_t));
@@ -177,16 +193,16 @@ void run_frozen_fn(const char *file_name, const char *fn_name)
   MP_STATE_MEM(gc_alloc_threshold) = 16 * 1024 / MICROPY_BYTES_PER_GC_BLOCK;
 #endif
   mp_init();
-  // nlr_buf_t nlr;
-  // if (nlr_push(&nlr) == 0) {
+  nlr_buf_t nlr;
+  NLR_PUSH_BLOCK(nlr) {
     pyexec_frozen_module(file_name, false);
     mp_obj_t module_fun = mp_load_name(qstr_from_str(fn_name));
     mp_call_function_0(module_fun);
-  //   nlr_pop();
-  // }
-  // else {
-  //   // handle_uncaught_exception(nlr.ret_val);
-  // }
+    nlr_pop();
+  }
+  NLR_PUSH_HANDLER(nlr) {
+    handle_uncaught_exception(nlr.ret_val);
+  }
   log_buffer_flush();
 }
 
@@ -204,85 +220,81 @@ static void gc_collect_top_level(void);
 static bool gc_collect_pending = false;
 
 // The largest new region that is available to become Python heap.
-size_t gc_get_max_new_split(void) {
-    return 128 * 1024 * 1024;
+size_t gc_get_max_new_split(void)
+{
+  return 128 * 1024 * 1024;
 }
 
 // Don't collect anything.  Instead require the heap to grow.
-void gc_collect(void) {
-    gc_collect_pending = true;
+void gc_collect(void)
+{
+  gc_collect_pending = true;
 }
 
 // Collect at the top-level, where there are no root pointers from stack/registers.
-static void gc_collect_top_level(void) {
-    if (gc_collect_pending) {
-        gc_collect_pending = false;
-        gc_collect_start();
-        gc_collect_end();
-    }
+static void gc_collect_top_level(void)
+{
+  if (gc_collect_pending) {
+    gc_collect_pending = false;
+    gc_collect_start();
+    gc_collect_end();
+  }
 }
 
 #else
 
-static void gc_scan_func(void *begin, void *end) {
-    gc_collect_root((void **)begin, (void **)end - (void **)begin + 1);
+static void gc_scan_func(void* begin, void* end)
+{
+  gc_collect_root((void**)begin, (void**)end - (void**)begin + 1);
 }
 
-void gc_collect(void) {
-    gc_collect_start();
-    emscripten_scan_stack(gc_scan_func);
-    emscripten_scan_registers(gc_scan_func);
-    gc_collect_end();
+void gc_collect(void)
+{
+  gc_collect_start();
+  emscripten_scan_stack(gc_scan_func);
+  emscripten_scan_registers(gc_scan_func);
+  gc_collect_end();
 }
 
 #endif
 
 #if !MICROPY_VFS
-mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
-    mp_raise_OSError(MP_ENOENT);
+mp_lexer_t* mp_lexer_new_from_file(qstr filename)
+{
+  mp_raise_OSError(MP_ENOENT);
+  return NULL;
 }
 
-mp_import_stat_t mp_import_stat(const char *path) {
-    return MP_IMPORT_STAT_NO_EXIST;
+mp_import_stat_t mp_import_stat(const char* path)
+{
+  return MP_IMPORT_STAT_NO_EXIST;
 }
 
-mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-    return mp_const_none;
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t* args, mp_map_t* kwargs)
+{
+  return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 #endif
 
-// todo: a function which will print exc to log_utf8 to be called from nlr_raise for debugging
-//       (we can do this in our own nlr_x.c impl too)
-//void nlr_jump(void *val) {
-//    MP_NLR_JUMP_HEAD(val, top);
-//    longjmp(top->jmpbuf, 1);
-//}
-
-//static void stderr_print_strn(void *env, const char *str, size_t len) {
-//    (void)env;
-//    write(2, str, len);
-//}
-
-//const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
-
-//    mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(exc));
-  
-void nlr_jump_fail(void *val) {
-    log_buffer_flush();
-    log_utf8_c("nlr_jump_fail");
-    abort();
+void nlr_jump_fail(void* val)
+{
+  log_buffer_flush();
+  NEAR_ABORT();
 }
 
-void NORETURN __fatal_error(const char *msg) {
-    log_buffer_flush();
-    log_utf8_c(msg);
-    abort();
+void NORETURN __fatal_error(const char* msg)
+{
+  log_buffer_flush();
+  log_utf8_c(msg);
+  NEAR_ABORT();
 }
 
 #ifndef NDEBUG
-void MP_WEAK __assert_func(const char *file, int line, const char *func, const char *expr) {
-    printf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
-    __fatal_error("Assertion failed");
+void MP_WEAK __assert_func(const char* file, int line, const char* func, const char* expr)
+{
+  printf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
+  log_buffer_flush();
+  NEAR_ABORT();
 }
 #endif

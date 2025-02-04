@@ -66,7 +66,7 @@ static const mp_print_t mp_stderr_print = {NULL, stderr_print_strn};
 
 static int compile_and_save(const char *file, const char *output_file, const char *source_file) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_lexer_t *lex;
         if (strcmp(file, "-") == 0) {
             lex = mp_lexer_new_from_fd(MP_QSTR__lt_stdin_gt_, STDIN_FILENO, false);

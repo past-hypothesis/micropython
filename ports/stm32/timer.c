@@ -1703,10 +1703,10 @@ static void timer_handle_irq_channel(pyb_timer_obj_t *tim, uint8_t channel, mp_o
                 // any memory allocations.  We must also catch any exceptions.
                 gc_lock();
                 nlr_buf_t nlr;
-                if (nlr_push(&nlr) == 0) {
+                NLR_PUSH_BLOCK(nlr) {
                     mp_call_function_1(callback, MP_OBJ_FROM_PTR(tim));
                     nlr_pop();
-                } else {
+                } NLR_PUSH_HANDLER(nlr) {
                     // Uncaught exception; disable the callback so it doesn't run again.
                     tim->callback = mp_const_none;
                     __HAL_TIM_DISABLE_IT(&tim->tim, irq_mask);

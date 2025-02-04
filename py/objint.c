@@ -62,6 +62,7 @@ static mp_obj_t mp_obj_int_make_new(const mp_obj_type_t *type_in, size_t n_args,
             #endif
             } else {
                 mp_raise_TypeError_int_conversion(args[0]);
+                return NULL;
             }
         }
 
@@ -144,6 +145,7 @@ mp_obj_t mp_obj_new_int_from_float(mp_float_t val) {
         } else {
             mp_raise_ValueError(MP_ERROR_TEXT("can't convert NaN to int"));
         }
+        return NULL;
     } else {
         mp_fp_as_int_class_t icl = mp_classify_fp_as_int(val);
         if (icl == MP_FP_CLASS_FIT_SMALLINT) {
@@ -161,6 +163,7 @@ mp_obj_t mp_obj_new_int_from_float(mp_float_t val) {
         #endif
         } else {
             mp_raise_ValueError(MP_ERROR_TEXT("float too big"));
+            return NULL;
         }
         #endif
     }
@@ -408,6 +411,7 @@ static mp_obj_t int_from_bytes(size_t n_args, const mp_obj_t *args, mp_map_t *kw
         }
         else {
             mp_raise_type_arg(&mp_type_ValueError, byteorder_elem->value);
+            return NULL;
         }
     }
     if (!big_endian) {
@@ -439,6 +443,7 @@ static mp_obj_t int_to_bytes(size_t n_args, const mp_obj_t *args) {
     mp_int_t dlen = n_args < 2 ? 1 : mp_obj_get_int(args[1]);
     if (dlen < 0) {
         mp_raise_ValueError(NULL);
+        return NULL;
     }
     bool big_endian = n_args < 3 || args[2] != MP_OBJ_NEW_QSTR(MP_QSTR_little);
 
@@ -476,6 +481,7 @@ static mp_obj_t int_to_bytes(size_t n_args, const mp_obj_t *args) {
 
     if (overflow) {
         mp_raise_msg(&mp_type_OverflowError, MP_ERROR_TEXT("buffer too small"));
+        return NULL;
     }
 
     return mp_obj_new_bytes_from_vstr(&vstr);

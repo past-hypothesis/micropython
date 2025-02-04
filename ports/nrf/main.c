@@ -92,13 +92,13 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     }
 
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         qstr source_name = lex->source_name;
         mp_parse_tree_t pn = mp_parse(lex, input_kind);
         mp_obj_t module_fun = mp_compile(&pn, source_name, true);
         mp_call_function_0(module_fun);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }

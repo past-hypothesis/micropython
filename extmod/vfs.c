@@ -142,10 +142,10 @@ mp_import_stat_t mp_vfs_import_stat(const char *path) {
     mp_obj_t path_o = mp_obj_new_str_from_cstr(path_out);
     mp_obj_t stat;
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         stat = mp_vfs_proxy_call(vfs, MP_QSTR_stat, 1, &path_o);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // assume an exception means that the path is not found
         return MP_IMPORT_STAT_NO_EXIST;
     }
@@ -162,7 +162,7 @@ mp_import_stat_t mp_vfs_import_stat(const char *path) {
 static mp_obj_t mp_vfs_autodetect(mp_obj_t bdev_obj) {
     #if MICROPY_VFS_LFS1 || MICROPY_VFS_LFS2
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // The superblock for littlefs is in both block 0 and 1, but block 0 may be erased
         // or partially written, so search both blocks 0 and 1 for the littlefs signature.
         mp_vfs_blockdev_t blockdev;
@@ -188,7 +188,7 @@ static mp_obj_t mp_vfs_autodetect(mp_obj_t bdev_obj) {
             #endif
         }
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Ignore exception (eg block device doesn't support extended readblocks)
     }
     #endif
@@ -531,13 +531,13 @@ MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_statvfs_obj, mp_vfs_statvfs);
 int mp_vfs_mount_and_chdir_protected(mp_obj_t bdev, mp_obj_t mount_point) {
     nlr_buf_t nlr;
     mp_int_t ret = -MP_EIO;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t args[] = { bdev, mount_point };
         mp_vfs_mount(2, args, (mp_map_t *)&mp_const_empty_map);
         mp_vfs_chdir(mount_point);
         ret = 0; // success
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         mp_obj_base_t *exc = nlr.ret_val;
         if (mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(exc->type), MP_OBJ_FROM_PTR(&mp_type_OSError))) {
             mp_obj_t v = mp_obj_exception_get_value(MP_OBJ_FROM_PTR(exc));

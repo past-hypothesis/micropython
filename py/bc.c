@@ -88,7 +88,7 @@ const byte *mp_decode_uint_skip(const byte *ptr) {
     return ptr;
 }
 
-static NORETURN void fun_pos_args_mismatch(mp_obj_fun_bc_t *f, size_t expected, size_t given) {
+static NLR_NORETURN void fun_pos_args_mismatch(mp_obj_fun_bc_t *f, size_t expected, size_t given) {
     #if MICROPY_ERROR_REPORTING <= MICROPY_ERROR_REPORTING_TERSE
     // generic message, used also for other argument issues
     (void)f;
@@ -216,6 +216,7 @@ static void mp_setup_code_state_helper(mp_code_state_t *code_state, size_t n_arg
                     error_multiple:
                         mp_raise_msg_varg(&mp_type_TypeError,
                             MP_ERROR_TEXT("function got multiple values for argument '%q'"), MP_OBJ_QSTR_VALUE(wanted_arg_name));
+                        return;
                     }
                     code_state_state[n_state - 1 - j] = kwargs[2 * i + 1];
                     goto continue2;
@@ -229,6 +230,7 @@ static void mp_setup_code_state_helper(mp_code_state_t *code_state, size_t n_arg
                 mp_raise_msg_varg(&mp_type_TypeError,
                     MP_ERROR_TEXT("unexpected keyword argument '%q'"), MP_OBJ_QSTR_VALUE(wanted_arg_name));
                 #endif
+                return;
             }
             mp_map_elem_t *elem = mp_map_lookup(mp_obj_dict_get_map(dict), wanted_arg_name, MP_MAP_LOOKUP_ADD_IF_NOT_FOUND);
             if (elem->value == MP_OBJ_NULL) {
@@ -259,6 +261,7 @@ static void mp_setup_code_state_helper(mp_code_state_t *code_state, size_t n_arg
             if (*d++ == MP_OBJ_NULL) {
                 mp_raise_msg_varg(&mp_type_TypeError,
                     MP_ERROR_TEXT("function missing required positional argument #%d"), &code_state_state[n_state] - d);
+                return;
             }
         }
 
@@ -283,6 +286,7 @@ static void mp_setup_code_state_helper(mp_code_state_t *code_state, size_t n_arg
                 } else {
                     mp_raise_msg_varg(&mp_type_TypeError,
                         MP_ERROR_TEXT("function missing required keyword argument '%q'"), arg_qstr);
+                    return;
                 }
             }
         }
@@ -291,6 +295,7 @@ static void mp_setup_code_state_helper(mp_code_state_t *code_state, size_t n_arg
         // no keyword arguments given
         if (n_kwonly_args != 0) {
             mp_raise_TypeError(MP_ERROR_TEXT("function missing keyword-only argument"));
+            return;
         }
         if ((scope_flags & MP_SCOPE_FLAG_VARKEYWORDS) != 0) {
             *var_pos_kw_args = mp_obj_new_dict(0);

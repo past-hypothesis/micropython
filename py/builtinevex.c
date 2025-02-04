@@ -106,6 +106,7 @@ static mp_obj_t mp_builtin_compile(size_t n_args, const mp_obj_t *args) {
             break;
         default:
             mp_raise_ValueError(MP_ERROR_TEXT("bad compile mode"));
+            return NULL;
     }
 
     mp_obj_code_t *code = mp_obj_malloc(mp_obj_code_t, &mp_type_code);
@@ -126,6 +127,7 @@ static mp_obj_t eval_exec_helper(size_t n_args, const mp_obj_t *args, mp_parse_i
         if (args[i] != mp_const_none) {
             if (!mp_obj_is_type(args[i], &mp_type_dict)) {
                 mp_raise_TypeError(NULL);
+                return NULL;
             }
             locals = MP_OBJ_TO_PTR(args[i]);
             if (i == 1) {

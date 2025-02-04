@@ -175,6 +175,7 @@ static void mp_obj_class_lookup(struct class_lookup_data *lookup, const mp_obj_t
                         if (obj_obj == MP_OBJ_FROM_PTR(&native_base_init_wrapper_obj)) {
                             // But we shouldn't attempt lookups on object that is not yet instantiated.
                             mp_raise_msg(&mp_type_AttributeError, MP_ERROR_TEXT("call super().__init__() first"));
+                            return;
                         }
                         #endif // MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG
                     } else {
@@ -363,6 +364,7 @@ static mp_obj_t mp_obj_instance_make_new(const mp_obj_type_t *self, size_t n_arg
             mp_raise_msg_varg(&mp_type_TypeError,
                 MP_ERROR_TEXT("__init__() should return None, not '%s'"), mp_obj_get_type_str(init_ret));
             #endif
+            return NULL;
         }
     }
 
@@ -445,6 +447,7 @@ static mp_obj_t instance_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
                 // Must return int
                 if (!mp_obj_is_int(val)) {
                     mp_raise_TypeError(NULL);
+                    return NULL;
                 }
                 break;
             default:
@@ -635,6 +638,7 @@ static void mp_obj_instance_load_attr(mp_obj_t self_in, qstr attr, mp_obj_t *des
             const mp_obj_t *proxy = mp_obj_property_get(member);
             if (proxy[0] == mp_const_none) {
                 mp_raise_msg(&mp_type_AttributeError, MP_ERROR_TEXT("unreadable attribute"));
+                return;
             } else {
                 dest[0] = mp_call_function_n_kw(proxy[0], 1, 0, &self_in);
             }
@@ -883,6 +887,7 @@ mp_obj_t mp_obj_instance_call(mp_obj_t self_in, size_t n_args, size_t n_kw, cons
         mp_raise_msg_varg(&mp_type_TypeError,
             MP_ERROR_TEXT("'%s' object isn't callable"), mp_obj_get_type_str(self_in));
         #endif
+        return NULL;
     }
     mp_obj_instance_t *self = MP_OBJ_TO_PTR(self_in);
     if (call == MP_OBJ_SENTINEL) {
@@ -997,6 +1002,7 @@ static mp_obj_t type_make_new(const mp_obj_type_t *type_in, size_t n_args, size_
 
         default:
             mp_raise_TypeError(MP_ERROR_TEXT("type takes 1 or 3 arguments"));
+            return NULL;
     }
 }
 
@@ -1011,6 +1017,7 @@ static mp_obj_t type_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp
         #else
         mp_raise_msg_varg(&mp_type_TypeError, MP_ERROR_TEXT("can't create '%q' instances"), self->name);
         #endif
+        return NULL;
     }
 
     // make new instance
@@ -1097,6 +1104,7 @@ static void type_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
                         if (self->flags & MP_TYPE_FLAG_IS_SUBCLASSED) {
                             // This class is already subclassed so can't have special accessors added
                             mp_raise_msg(&mp_type_AttributeError, MP_ERROR_TEXT("can't add special method to already-subclassed class"));
+                            return;
                         }
                         self->flags |= MP_TYPE_FLAG_HAS_SPECIAL_ACCESSORS;
                     }
@@ -1126,9 +1134,11 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
     // Verify input objects have expected type
     if (!mp_obj_is_type(bases_tuple, &mp_type_tuple)) {
         mp_raise_TypeError(NULL);
+        return NULL;
     }
     if (!mp_obj_is_dict_or_ordereddict(locals_dict)) {
         mp_raise_TypeError(NULL);
+        return NULL;
     }
 
     // TODO might need to make a copy of locals_dict; at least that's how CPython does it
@@ -1145,6 +1155,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
     for (size_t i = 0; i < bases_len; i++) {
         if (!mp_obj_is_type(bases_items[i], &mp_type_type)) {
             mp_raise_TypeError(NULL);
+            return NULL;
         }
         mp_obj_type_t *t = MP_OBJ_TO_PTR(bases_items[i]);
         // TODO: Verify with CPy, tested on function type
@@ -1155,6 +1166,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
             mp_raise_msg_varg(&mp_type_TypeError,
                 MP_ERROR_TEXT("type '%q' isn't an acceptable base type"), t->name);
             #endif
+            return NULL;
         }
         #if ENABLE_SPECIAL_ACCESSORS
         if (mp_obj_is_instance_type(t)) {
@@ -1197,6 +1209,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
             #else
             mp_raise_NotImplementedError(MP_ERROR_TEXT("multiple inheritance not supported"));
             #endif
+            return NULL;
         } else {
             MP_OBJ_TYPE_SET_SLOT(o, parent, MP_OBJ_TO_PTR(bases_items[0]), 10);
         }
@@ -1229,6 +1242,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
     size_t num_native_bases = instance_count_native_bases(o, &native_base);
     if (num_native_bases > 1) {
         mp_raise_TypeError(MP_ERROR_TEXT("multiple bases have instance lay-out conflict"));
+        return NULL;
     }
 
     mp_map_t *locals_map = &MP_OBJ_TYPE_GET_SLOT(o, locals_dict)->map;
@@ -1275,6 +1289,7 @@ static mp_obj_t super_make_new(const mp_obj_type_t *type_in, size_t n_args, size
     mp_obj_t second_arg_obj = second_arg_type == &mp_type_type ? args[1] : MP_OBJ_FROM_PTR(second_arg_type);
     if (mp_obj_is_subclass(second_arg_obj, args[0]) == mp_const_false) {
         mp_raise_TypeError(NULL);
+        return NULL;
     }
 
     mp_obj_super_t *o = m_new_obj(mp_obj_super_t);
@@ -1420,6 +1435,7 @@ static mp_obj_t mp_obj_is_subclass(mp_obj_t object, mp_obj_t classinfo) {
         mp_obj_tuple_get(classinfo, &len, &items);
     } else {
         mp_raise_TypeError(MP_ERROR_TEXT("issubclass() arg 2 must be a class or a tuple of classes"));
+        return NULL;
     }
 
     for (size_t i = 0; i < len; i++) {
@@ -1434,6 +1450,7 @@ static mp_obj_t mp_obj_is_subclass(mp_obj_t object, mp_obj_t classinfo) {
 static mp_obj_t mp_builtin_issubclass(mp_obj_t object, mp_obj_t classinfo) {
     if (!mp_obj_is_type(object, &mp_type_type)) {
         mp_raise_TypeError(MP_ERROR_TEXT("issubclass() arg 1 must be a class"));
+        return NULL;
     }
     return mp_obj_is_subclass(object, classinfo);
 }

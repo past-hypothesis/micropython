@@ -46,6 +46,11 @@ unsigned int nlr_push_tail(nlr_buf_t *nlr) {
 }
 
 void nlr_pop(void) {
+#if MICROPY_NLR_WASM
+    if (MP_STATE_THREAD(nlr_exc)) {
+      return;
+    }
+#endif
     nlr_buf_t **top = &MP_STATE_THREAD(nlr_top);
     *top = (*top)->prev;
 }

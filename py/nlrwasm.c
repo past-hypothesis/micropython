@@ -3,8 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Josef Gajdusek
- * Copyright (c) 2015 Paul Sokolovsky
+ * Copyright (c) 2013-2023 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +24,19 @@
  * THE SOFTWARE.
  */
 
+#include "py/mpstate.h"
 #include "py/runtime.h"
 
-mp_obj_t mp_call_function_1_protected(mp_obj_t fun, mp_obj_t arg) {
-    nlr_buf_t nlr;
-    NLR_PUSH_BLOCK(nlr) {
-        mp_obj_t ret = mp_call_function_1(fun, arg);
-        nlr_pop();
-        return ret;
-    } NLR_PUSH_HANDLER(nlr) {
-        mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
-        return MP_OBJ_NULL;
-    }
+#if MICROPY_NLR_WASM
+
+unsigned int nlr_push(nlr_buf_t *nlr) {
+    return nlr_push_tail(nlr);
 }
 
-mp_obj_t mp_call_function_2_protected(mp_obj_t fun, mp_obj_t arg1, mp_obj_t arg2) {
-    nlr_buf_t nlr;
-    NLR_PUSH_BLOCK(nlr) {
-        mp_obj_t ret = mp_call_function_2(fun, arg1, arg2);
-        nlr_pop();
-        return ret;
-    } NLR_PUSH_HANDLER(nlr) {
-        mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
-        return MP_OBJ_NULL;
-    }
+void nlr_jump(void *val) {
+    // mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(val));
+    MP_NLR_JUMP_HEAD(val, top);
+    MP_STATE_THREAD(nlr_exc) = val;
 }
+
+#endif

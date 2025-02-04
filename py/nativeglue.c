@@ -164,6 +164,7 @@ static mp_obj_t mp_native_call_function_n_kw(mp_obj_t fun_in, size_t n_args_kw, 
 // END_FINALLY opcode requires that we don't raise if o==None
 static void mp_native_raise(mp_obj_t o) {
     if (o != MP_OBJ_NULL && o != mp_const_none) {
+        printf("mp_native_raise");
         nlr_raise(mp_make_raise_obj(o));
     }
 }
@@ -218,12 +219,14 @@ static bool mp_native_yield_from(mp_obj_t gen, mp_obj_t send_value, mp_obj_t *re
     } else {
         assert(ret_kind == MP_VM_RETURN_EXCEPTION);
         if (!mp_obj_exception_match(*ret_value, MP_OBJ_FROM_PTR(&mp_type_StopIteration))) {
+            printf("mp_native_yield_from 1");
             nlr_raise(*ret_value);
         }
         *ret_value = mp_obj_exception_get_value(*ret_value);
     }
 
     if (throw_value != MP_OBJ_NULL && mp_obj_exception_match(throw_value, MP_OBJ_FROM_PTR(&mp_type_GeneratorExit))) {
+      printf("mp_native_yield_from 2");
         nlr_raise(mp_make_raise_obj(throw_value));
     }
 

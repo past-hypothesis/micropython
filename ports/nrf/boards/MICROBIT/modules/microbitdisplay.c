@@ -328,11 +328,11 @@ static void microbit_display_update(void) {
             mp_obj_t obj;
             nlr_buf_t nlr;
             gc_lock();
-            if (nlr_push(&nlr) == 0) {
+            NLR_PUSH_BLOCK(nlr) {
                 obj = mp_iternext_allow_raise(async_iterator);
                 nlr_pop();
                 gc_unlock();
-            } else {
+            } NLR_PUSH_HANDLER(nlr) {
                 gc_unlock();
                 if (!mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(((mp_obj_base_t*)nlr.ret_val)->type),
                     MP_OBJ_FROM_PTR(&mp_type_StopIteration))) {

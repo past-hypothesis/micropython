@@ -50,10 +50,10 @@ void mp_os_deactivate(size_t dupterm_idx, const char *msg, mp_obj_t exc) {
         return;
     }
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_stream_close(term);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Ignore any errors during stream closing
     }
 }
@@ -77,10 +77,10 @@ uintptr_t mp_os_dupterm_poll(uintptr_t poll_flags) {
         #endif
         {
             nlr_buf_t nlr;
-            if (nlr_push(&nlr) == 0) {
+            NLR_PUSH_BLOCK(nlr) {
                 ret = stream_p->ioctl(s, MP_STREAM_POLL, poll_flags, &errcode);
                 nlr_pop();
-            } else {
+            } NLR_PUSH_HANDLER(nlr) {
                 // Ignore error with ioctl
             }
         }
@@ -135,7 +135,7 @@ int mp_os_dupterm_rx_chr(void) {
         #endif
 
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             byte buf[1];
             int errcode;
             const mp_stream_p_t *stream_p = mp_get_stream(MP_STATE_VM(dupterm_objs[idx]));
@@ -161,7 +161,7 @@ int mp_os_dupterm_rx_chr(void) {
                 }
                 break;
             }
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_os_deactivate(idx, "dupterm: Exception in read() method, deactivating: ", MP_OBJ_FROM_PTR(nlr.ret_val));
         }
     }
@@ -195,7 +195,7 @@ int mp_os_dupterm_tx_strn(const char *str, size_t len) {
         #endif
 
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_obj_t written = mp_stream_write(MP_STATE_VM(dupterm_objs[idx]), str, len, MP_STREAM_RW_WRITE);
             if (written == mp_const_none) {
                 ret = 0;
@@ -204,7 +204,7 @@ int mp_os_dupterm_tx_strn(const char *str, size_t len) {
                 ret = MIN(written_int, ret);
             }
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_os_deactivate(idx, "dupterm: Exception in write() method, deactivating: ", MP_OBJ_FROM_PTR(nlr.ret_val));
             ret = 0;
         }

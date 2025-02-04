@@ -459,6 +459,7 @@ static mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
             mp_bound_slice_t slice;
             if (!mp_seq_get_fast_slice_indexes(o->len, index_in, &slice)) {
                 mp_raise_NotImplementedError(MP_ERROR_TEXT("only slices with step=1 (aka None) are supported"));
+                return NULL;
             }
             if (value != MP_OBJ_SENTINEL) {
                 #if MICROPY_PY_ARRAY_SLICE_ASSIGN
@@ -473,6 +474,7 @@ static mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
                     if (item_sz != mp_binary_get_size('@', src_slice->typecode & TYPECODE_MASK, NULL)) {
                     compat_error:
                         mp_raise_ValueError(MP_ERROR_TEXT("lhs and rhs should be compatible"));
+                        return NULL;
                     }
                     src_len = src_slice->len;
                     src_items = src_slice->items;
@@ -491,6 +493,7 @@ static mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
                     src_items = bufinfo.buf;
                 } else {
                     mp_raise_NotImplementedError(MP_ERROR_TEXT("array/bytes required on right side"));
+                    return NULL;
                 }
 
                 // TODO: check src/dst compat

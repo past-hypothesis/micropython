@@ -41,7 +41,7 @@ static const char *demo_file_input =
 
 static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // Compile, parse and execute the given string.
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
         qstr source_name = lex->source_name;
@@ -49,7 +49,7 @@ static void do_str(const char *src, mp_parse_input_kind_t input_kind) {
         mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
         mp_call_function_0(module_fun);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Uncaught exception: print it out.
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }

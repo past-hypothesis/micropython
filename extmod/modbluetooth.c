@@ -1233,10 +1233,10 @@ static mp_obj_t invoke_irq_handler_run_protected(uint16_t event,
 
     mp_obj_t result = mp_const_none;
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         result = invoke_irq_handler_run(event, numeric, n_unsigned, n_signed, addr, uuid, data, data_len, n_data);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Uncaught exception, print it out.
         mp_printf(MICROPY_ERROR_PRINTER, "Unhandled exception in IRQ callback handler\n");
         mp_obj_print_exception(MICROPY_ERROR_PRINTER, MP_OBJ_FROM_PTR(nlr.ret_val));

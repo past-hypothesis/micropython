@@ -89,6 +89,7 @@ static mp_obj_t mod_random_getrandbits(mp_obj_t num_in) {
     mp_int_t n = mp_obj_get_int(num_in);
     if (n > 32 || n < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("bits must be 32 or less"));
+        return NULL;
     }
     if (n == 0) {
         return MP_OBJ_NEW_SMALL_INT(0);
@@ -107,6 +108,7 @@ static mp_obj_t mod_random_seed(size_t n_args, const mp_obj_t *args) {
         seed = MICROPY_PY_RANDOM_SEED_INIT_FUNC;
         #else
         mp_raise_ValueError(MP_ERROR_TEXT("no default seed"));
+        return NULL;
         #endif
     } else {
         seed = mp_obj_get_int_truncated(args[0]);
@@ -160,6 +162,7 @@ static mp_obj_t mod_random_randrange(size_t n_args, const mp_obj_t *args) {
 
 error:
     mp_raise_ValueError(NULL);
+    return NULL;
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_random_randrange_obj, 1, 3, mod_random_randrange);
 
@@ -170,6 +173,7 @@ static mp_obj_t mod_random_randint(mp_obj_t a_in, mp_obj_t b_in) {
         return mp_obj_new_int(a + yasmarang_randbelow((uint32_t)(b - a + 1)));
     } else {
         mp_raise_ValueError(NULL);
+        return NULL;
     }
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(mod_random_randint_obj, mod_random_randint);
@@ -180,6 +184,7 @@ static mp_obj_t mod_random_choice(mp_obj_t seq) {
         return mp_obj_subscr(seq, mp_obj_new_int(yasmarang_randbelow((uint32_t)len)), MP_OBJ_SENTINEL);
     } else {
         mp_raise_type(&mp_type_IndexError);
+        return NULL;
     }
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(mod_random_choice_obj, mod_random_choice);

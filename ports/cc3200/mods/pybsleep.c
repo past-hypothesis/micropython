@@ -264,7 +264,7 @@ void pyb_sleep_sleep (void) {
     // entering and exiting suspended mode must be an atomic operation
     // therefore interrupts need to be disabled
     uint primsk = disable_irq();
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         pyb_sleep_suspend_enter();
         nlr_pop();
     }

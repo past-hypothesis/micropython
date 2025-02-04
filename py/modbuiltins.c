@@ -139,6 +139,7 @@ static mp_obj_t mp_builtin_chr(mp_obj_t o_in) {
     mp_uint_t c = mp_obj_get_int(o_in);
     if (c >= 0x110000) {
         mp_raise_ValueError(MP_ERROR_TEXT("chr() arg not in range(0x110000)"));
+        return NULL;
     }
     VSTR_FIXED(buf, 4);
     vstr_add_char(&buf, c);
@@ -150,6 +151,7 @@ static mp_obj_t mp_builtin_chr(mp_obj_t o_in) {
         return mp_obj_new_str_via_qstr((char *)str, 1);
     } else {
         mp_raise_ValueError(MP_ERROR_TEXT("chr() arg not in range(256)"));
+        return NULL;
     }
     #endif
 }
@@ -228,9 +230,11 @@ static mp_obj_t mp_builtin_input(size_t n_args, const mp_obj_t *args) {
     int ret = mp_hal_readline(&line, "");
     if (ret == CHAR_CTRL_C) {
         mp_raise_type(&mp_type_KeyboardInterrupt);
+        return NULL;
     }
     if (line.len == 0 && ret == CHAR_CTRL_D) {
         mp_raise_type(&mp_type_EOFError);
+        return NULL;
     }
     return mp_obj_new_str_from_vstr(&line);
 }
@@ -269,6 +273,7 @@ static mp_obj_t mp_builtin_min_max(size_t n_args, const mp_obj_t *args, mp_map_t
                 best_obj = default_elem->value;
             } else {
                 mp_raise_ValueError(MP_ERROR_TEXT("arg is an empty sequence"));
+                return NULL;
             }
         }
         return best_obj;
@@ -305,6 +310,7 @@ static mp_obj_t mp_builtin_next(size_t n_args, const mp_obj_t *args) {
         mp_obj_t ret = mp_iternext_allow_raise(args[0]);
         if (ret == MP_OBJ_STOP_ITERATION) {
             mp_raise_StopIteration(MP_STATE_THREAD(stop_iteration_arg));
+            return NULL;
         } else {
             return ret;
         }
@@ -319,6 +325,7 @@ static mp_obj_t mp_builtin_next(mp_obj_t o) {
     mp_obj_t ret = mp_iternext_allow_raise(o);
     if (ret == MP_OBJ_STOP_ITERATION) {
         mp_raise_StopIteration(MP_STATE_THREAD(stop_iteration_arg));
+        return NULL;
     } else {
         return ret;
     }
@@ -360,6 +367,7 @@ static mp_obj_t mp_builtin_ord(mp_obj_t o_in) {
     mp_raise_msg_varg(&mp_type_TypeError,
         MP_ERROR_TEXT("ord() expected a character, but string of length %d found"), (int)len);
     #endif
+    return NULL;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_builtin_ord_obj, mp_builtin_ord);
 
@@ -370,6 +378,7 @@ static mp_obj_t mp_builtin_pow(size_t n_args, const mp_obj_t *args) {
         default:
             #if !MICROPY_PY_BUILTINS_POW3
             mp_raise_NotImplementedError(MP_ERROR_TEXT("3-arg pow() not supported"));
+            return NULL;
             #elif MICROPY_LONGINT_IMPL != MICROPY_LONGINT_IMPL_MPZ
             return mp_binary_op(MP_BINARY_OP_MODULO, mp_binary_op(MP_BINARY_OP_POWER, args[0], args[1]), args[2]);
             #else
@@ -398,6 +407,7 @@ static mp_obj_t mp_builtin_print(size_t n_args, const mp_obj_t *pos_args, mp_map
 
     #if MICROPY_PY_IO && MICROPY_PY_SYS_STDFILES
     mp_get_stream_raise(u.args[ARG_file].u_obj, MP_STREAM_OP_WRITE);
+    return NULL;
     mp_print_t print = {MP_OBJ_TO_PTR(u.args[ARG_file].u_obj), mp_stream_write_adaptor};
     #endif
 
@@ -462,6 +472,7 @@ static mp_obj_t mp_builtin_round(size_t n_args, const mp_obj_t *args) {
 
         #if !MICROPY_PY_BUILTINS_ROUND_INT
         mp_raise_NotImplementedError(NULL);
+        return NULL;
         #else
         mp_int_t num_dig = mp_obj_get_int(args[1]);
         if (num_dig >= 0) {
@@ -528,6 +539,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_builtin_sum_obj, 1, 2, mp_builtin_sum);
 static mp_obj_t mp_builtin_sorted(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     if (n_args > 1) {
         mp_raise_TypeError(MP_ERROR_TEXT("must use keyword argument for key function"));
+        return NULL;
     }
     mp_obj_t self = mp_obj_list_make_new(&mp_type_list, 1, 0, args);
     mp_obj_list_sort(1, &self, kwargs);

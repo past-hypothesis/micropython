@@ -158,6 +158,7 @@ static mp_obj_t mp_sys_exit(size_t n_args, const mp_obj_t *args) {
     } else {
         mp_raise_type_arg(&mp_type_SystemExit, args[0]);
     }
+    return NULL;
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_sys_exit_obj, 0, 1, mp_sys_exit);
 

@@ -107,10 +107,10 @@ void extint_callback(void *param) {
         // any memory allocations.  We must also catch any exceptions.
         gc_lock();
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_call_function_1(*cb, pyb_extint_callback_arg[irq_no]);
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             // Uncaught exception; disable the callback so it doesn't run again.
             *cb = mp_const_none;
             ra_icu_disable_irq_no(irq_no);

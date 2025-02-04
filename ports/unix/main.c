@@ -119,7 +119,7 @@ static int execute_from_lexer(int source_kind, const void *source, mp_parse_inpu
     mp_hal_set_interrupt_char(CHAR_CTRL_C);
 
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // create lexer based on source kind
         mp_lexer_t *lex;
         if (source_kind == LEX_SRC_STR) {
@@ -166,7 +166,7 @@ static int execute_from_lexer(int source_kind, const void *source, mp_parse_inpu
         nlr_pop();
         return 0;
 
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         mp_hal_set_interrupt_char(-1);
         mp_handle_pending(false);
@@ -671,10 +671,10 @@ MP_NOINLINE int main_(int argc, char **argv) {
                 subpkg_tried = false;
 
             reimport:
-                if (nlr_push(&nlr) == 0) {
+                NLR_PUSH_BLOCK(nlr) {
                     mod = mp_builtin___import__(MP_ARRAY_SIZE(import_args), import_args);
                     nlr_pop();
-                } else {
+                } NLR_PUSH_HANDLER(nlr) {
                     // uncaught exception
                     return handle_uncaught_exception(nlr.ret_val) & 0xff;
                 }

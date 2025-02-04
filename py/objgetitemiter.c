@@ -38,13 +38,13 @@ typedef struct _mp_obj_getitem_iter_t {
 static mp_obj_t it_iternext(mp_obj_t self_in) {
     mp_obj_getitem_iter_t *self = MP_OBJ_TO_PTR(self_in);
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // try to get next item
         mp_obj_t value = mp_call_method_n_kw(1, 0, self->args);
         self->args[2] = MP_OBJ_NEW_SMALL_INT(MP_OBJ_SMALL_INT_VALUE(self->args[2]) + 1);
         nlr_pop();
         return value;
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // an exception was raised
         mp_obj_type_t *t = (mp_obj_type_t *)((mp_obj_base_t *)nlr.ret_val)->type;
         if (t == &mp_type_StopIteration || t == &mp_type_IndexError) {

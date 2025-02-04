@@ -228,6 +228,7 @@ void mp_handle_pending(bool raise_exc) {
             MP_STATE_THREAD(mp_pending_exception) = MP_OBJ_NULL;
             if (raise_exc) {
                 MICROPY_END_ATOMIC_SECTION(atomic_state);
+                printf("mp_handle_pending");
                 nlr_raise(obj);
             }
         }

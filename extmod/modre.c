@@ -73,6 +73,7 @@ static mp_obj_t match_group(mp_obj_t self_in, mp_obj_t no_in) {
     mp_int_t no = mp_obj_get_int(no_in);
     if (no < 0 || no >= self->num_matches) {
         mp_raise_type_arg(&mp_type_IndexError, no_in);
+        return NULL;
     }
 
     const char *start = self->caps[no * 2];
@@ -112,6 +113,7 @@ static void match_span_helper(size_t n_args, const mp_obj_t *args, mp_obj_t span
         no = mp_obj_get_int(args[1]);
         if (no < 0 || no >= self->num_matches) {
             mp_raise_type_arg(&mp_type_IndexError, args[1]);
+            return;
         }
     }
 
@@ -263,6 +265,7 @@ static mp_obj_t re_split(size_t n_args, const mp_obj_t *args) {
         mp_obj_list_append(retval, s);
         if (self->re.sub > 0) {
             mp_raise_NotImplementedError(MP_ERROR_TEXT("splitting with sub-captures"));
+            return NULL;
         }
         subj.begin = caps[1];
         if (maxsplit > 0 && --maxsplit == 0) {
@@ -353,6 +356,7 @@ static mp_obj_t re_sub_helper(size_t n_args, const mp_obj_t *args) {
 
                     if (match_no >= (unsigned int)match->num_matches) {
                         mp_raise_type_arg(&mp_type_IndexError, MP_OBJ_NEW_SMALL_INT(match_no));
+                        return NULL;
                     }
 
                     const char *start_match = match->caps[match_no * 2];
@@ -440,6 +444,7 @@ static mp_obj_t mod_re_compile(size_t n_args, const mp_obj_t *args) {
     if (error != 0) {
     error:
         mp_raise_ValueError(MP_ERROR_TEXT("error in regex"));
+        return NULL;
     }
     #if MICROPY_PY_RE_DEBUG
     if (flags & FLAG_DEBUG) {

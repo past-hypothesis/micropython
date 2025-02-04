@@ -574,11 +574,11 @@ static mp_obj_t mod_socket_getaddrinfo(size_t n_args, const mp_obj_t *args) {
     if (hlen > 0) {
         // check if host is already in IP form
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             netutils_parse_ipv4_addr(args[0], out_ip, NETUTILS_BIG);
             have_ip = true;
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             // swallow exception: host was not in IP form so need to do DNS lookup
         }
     }

@@ -111,7 +111,7 @@ void mp_js_register_js_module(const char *name, uint32_t *value) {
 void mp_js_do_import(const char *name, uint32_t *out) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t ret = mp_import_name(qstr_from_str(name), mp_const_none, MP_OBJ_NEW_SMALL_INT(0));
         // Return the leaf of the import, eg for "a.b.c" return "c".
         const char *m = name;
@@ -130,7 +130,7 @@ void mp_js_do_import(const char *name, uint32_t *out) {
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(ret, out);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, out);
@@ -141,7 +141,7 @@ void mp_js_do_exec(const char *src, size_t len, uint32_t *out) {
     external_call_depth_inc();
     mp_parse_input_kind_t input_kind = MP_PARSE_FILE_INPUT;
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_lexer_t *lex = mp_lexer_new_from_str_len_dedent(MP_QSTR__lt_stdin_gt_, src, len, 0);
         qstr source_name = lex->source_name;
         mp_parse_tree_t parse_tree = mp_parse(lex, input_kind);
@@ -150,7 +150,7 @@ void mp_js_do_exec(const char *src, size_t len, uint32_t *out) {
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(ret, out);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, out);

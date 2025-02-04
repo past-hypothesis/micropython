@@ -164,6 +164,7 @@ mp_vm_return_kind_t mp_obj_gen_resume(mp_obj_t self_in, mp_obj_t send_value, mp_
     // Ensure the generator cannot be reentered during execution
     if (self->pend_exc == MP_OBJ_NULL) {
         mp_raise_ValueError(MP_ERROR_TEXT("generator already executing"));
+        return MP_VM_RETURN_EXCEPTION;
     }
 
     #if MICROPY_PY_GENERATOR_PEND_THROW
@@ -183,6 +184,7 @@ mp_vm_return_kind_t mp_obj_gen_resume(mp_obj_t self_in, mp_obj_t send_value, mp_
     if (self->code_state.sp == state_start) {
         if (send_value != mp_const_none) {
             mp_raise_TypeError(MP_ERROR_TEXT("can't send non-None value to a just-started generator"));
+            return MP_VM_RETURN_EXCEPTION;
         }
     } else {
         *self->code_state.sp = send_value;
@@ -266,6 +268,7 @@ static mp_obj_t gen_resume_and_raise(mp_obj_t self_in, mp_obj_t send_value, mp_o
             }
             if (raise_stop_iteration) {
                 mp_raise_StopIteration(ret);
+                return NULL;
             } else {
                 return mp_make_stop_iteration(ret);
             }
@@ -275,6 +278,7 @@ static mp_obj_t gen_resume_and_raise(mp_obj_t self_in, mp_obj_t send_value, mp_o
 
         case MP_VM_RETURN_EXCEPTION:
             nlr_raise(ret);
+            return NULL;
     }
 }
 
@@ -314,6 +318,7 @@ static mp_obj_t gen_instance_close(mp_obj_t self_in) {
     switch (mp_obj_gen_resume(self_in, mp_const_none, MP_OBJ_FROM_PTR(&mp_const_GeneratorExit_obj), &ret)) {
         case MP_VM_RETURN_YIELD:
             mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("generator ignored GeneratorExit"));
+            return NULL;
 
         // Swallow GeneratorExit (== successful close), and re-raise any other
         case MP_VM_RETURN_EXCEPTION:
@@ -322,6 +327,7 @@ static mp_obj_t gen_instance_close(mp_obj_t self_in) {
                 return mp_const_none;
             }
             nlr_raise(ret);
+            return NULL;
 
         default:
             // The only choice left is MP_VM_RETURN_NORMAL which is successful close
@@ -335,6 +341,7 @@ static mp_obj_t gen_instance_pend_throw(mp_obj_t self_in, mp_obj_t exc_in) {
     mp_obj_gen_instance_t *self = MP_OBJ_TO_PTR(self_in);
     if (self->pend_exc == MP_OBJ_NULL) {
         mp_raise_ValueError(MP_ERROR_TEXT("generator already executing"));
+        return NULL;
     }
     mp_obj_t prev = self->pend_exc;
     self->pend_exc = exc_in;

@@ -517,6 +517,7 @@ mp_obj_t mp_obj_len(mp_obj_t o_in) {
     } else {
         return len;
     }
+    return NULL;
 }
 
 // may return MP_OBJ_NULL
@@ -537,6 +538,7 @@ mp_obj_t mp_obj_len_maybe(mp_obj_t o_in) {
             return MP_OBJ_NULL;
         }
     }
+    return NULL;
 }
 
 mp_obj_t mp_obj_subscr(mp_obj_t base, mp_obj_t index, mp_obj_t value) {
@@ -570,6 +572,7 @@ mp_obj_t mp_obj_subscr(mp_obj_t base, mp_obj_t index, mp_obj_t value) {
             MP_ERROR_TEXT("'%s' object doesn't support item assignment"), mp_obj_get_type_str(base));
         #endif
     }
+    return NULL;
 }
 
 // Return input argument. Useful as .getiter for objects which are

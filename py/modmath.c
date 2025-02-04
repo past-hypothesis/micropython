@@ -37,7 +37,7 @@
 #define MP_PI_4 MICROPY_FLOAT_CONST(0.78539816339744830962)
 #define MP_3_PI_4 MICROPY_FLOAT_CONST(2.35619449019234492885)
 
-static NORETURN void math_error(void) {
+static NLR_NORETURN void math_error(void) {
     mp_raise_ValueError(MP_ERROR_TEXT("math domain error"));
 }
 
@@ -263,6 +263,7 @@ static mp_obj_t mp_math_log(size_t n_args, const mp_obj_t *args) {
             math_error();
         } else if (base == (mp_float_t)1.0) {
             mp_raise_msg(&mp_type_ZeroDivisionError, MP_ERROR_TEXT("divide by zero"));
+            return NULL;
         }
         return mp_obj_new_float(l / MICROPY_FLOAT_C_FUN(log)(base));
     }
@@ -340,6 +341,7 @@ static mp_obj_t mp_math_factorial(mp_obj_t x_obj) {
     mp_int_t max = mp_obj_get_int(x_obj);
     if (max < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("negative factorial"));
+        return NULL;
     } else if (max == 0) {
         return MP_OBJ_NEW_SMALL_INT(1);
     }
@@ -354,6 +356,7 @@ static mp_obj_t mp_math_factorial(mp_obj_t x_obj) {
     mp_int_t max = mp_obj_get_int(x_obj);
     if (max < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("negative factorial"));
+        return NULL;
     } else if (max <= 1) {
         return MP_OBJ_NEW_SMALL_INT(1);
     }

@@ -249,7 +249,7 @@ void proxy_convert_mp_to_js_exc_cside(void *exc, uint32_t *out) {
 void proxy_c_to_js_call(uint32_t c_ref, uint32_t n_args, uint32_t *args_value, uint32_t *out) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t args[n_args];
         for (size_t i = 0; i < n_args; ++i) {
             args[i] = proxy_convert_js_to_mp_obj_cside(args_value + i * 3);
@@ -259,7 +259,7 @@ void proxy_c_to_js_call(uint32_t c_ref, uint32_t n_args, uint32_t *args_value, u
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(member, out);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, out);
@@ -269,7 +269,7 @@ void proxy_c_to_js_call(uint32_t c_ref, uint32_t n_args, uint32_t *args_value, u
 void proxy_c_to_js_dir(uint32_t c_ref, uint32_t *out) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t obj = proxy_c_get_obj(c_ref);
         mp_obj_t dir;
         if (mp_obj_is_dict_or_ordereddict(obj)) {
@@ -280,14 +280,14 @@ void proxy_c_to_js_dir(uint32_t c_ref, uint32_t *out) {
                     mp_obj_list_append(dir, map->table[i].key);
                 }
             }
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             mp_obj_t args[1] = { obj };
             dir = mp_builtin_dir_obj.fun.var(1, args);
         }
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(dir, out);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, out);
@@ -314,7 +314,7 @@ bool proxy_c_to_js_has_attr(uint32_t c_ref, const char *attr_in) {
 void proxy_c_to_js_lookup_attr(uint32_t c_ref, const char *attr_in, uint32_t *out) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t obj = proxy_c_get_obj(c_ref);
         qstr attr = qstr_from_str(attr_in);
         mp_obj_t member;
@@ -335,7 +335,7 @@ void proxy_c_to_js_lookup_attr(uint32_t c_ref, const char *attr_in, uint32_t *ou
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(member, out);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, out);
@@ -345,7 +345,7 @@ void proxy_c_to_js_lookup_attr(uint32_t c_ref, const char *attr_in, uint32_t *ou
 static bool proxy_c_to_js_store_helper(uint32_t c_ref, const char *attr_in, uint32_t *value_in) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t obj = proxy_c_get_obj(c_ref);
         qstr attr = qstr_from_str(attr_in);
 
@@ -366,7 +366,7 @@ static bool proxy_c_to_js_store_helper(uint32_t c_ref, const char *attr_in, uint
         nlr_pop();
         external_call_depth_dec();
         return true;
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         return false;
@@ -441,7 +441,7 @@ uint32_t proxy_c_to_js_get_iter(uint32_t c_ref) {
 bool proxy_c_to_js_iternext(uint32_t c_ref, uint32_t *out) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t obj = proxy_c_get_obj(c_ref);
         mp_obj_t iter = mp_iternext_allow_raise(obj);
         if (iter == MP_OBJ_STOP_ITERATION) {
@@ -453,7 +453,7 @@ bool proxy_c_to_js_iternext(uint32_t c_ref, uint32_t *out) {
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(iter, out);
         return true;
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         external_call_depth_dec();
         if (mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(((mp_obj_base_t *)nlr.ret_val)->type), MP_OBJ_FROM_PTR(&mp_type_StopIteration))) {
             return false;
@@ -599,7 +599,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(resume_obj, 5, 5, resume_fun);
 void proxy_c_to_js_resume(uint32_t c_ref, uint32_t *args) {
     external_call_depth_inc();
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t obj = proxy_c_get_obj(c_ref);
         mp_obj_t resolve = proxy_convert_js_to_mp_obj_cside(args + 1 * 3);
         mp_obj_t reject = proxy_convert_js_to_mp_obj_cside(args + 2 * 3);
@@ -607,7 +607,7 @@ void proxy_c_to_js_resume(uint32_t c_ref, uint32_t *args) {
         nlr_pop();
         external_call_depth_dec();
         proxy_convert_mp_to_js_obj_cside(ret, args);
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // uncaught exception
         external_call_depth_dec();
         proxy_convert_mp_to_js_exc_cside(nlr.ret_val, args);

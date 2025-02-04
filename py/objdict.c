@@ -213,6 +213,7 @@ mp_obj_t mp_obj_dict_get(mp_obj_t self_in, mp_obj_t index) {
     mp_map_elem_t *elem = mp_map_lookup(&self->map, index, MP_MAP_LOOKUP);
     if (elem == NULL) {
         mp_raise_type_arg(&mp_type_KeyError, index);
+        return NULL;
     } else {
         return elem->value;
     }
@@ -229,6 +230,7 @@ static mp_obj_t dict_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
         mp_map_elem_t *elem = mp_map_lookup(&self->map, index, MP_MAP_LOOKUP);
         if (elem == NULL) {
             mp_raise_type_arg(&mp_type_KeyError, index);
+            return NULL;
         } else {
             return elem->value;
         }
@@ -318,6 +320,7 @@ static mp_obj_t dict_get_helper(size_t n_args, const mp_obj_t *args, mp_map_look
         if (n_args == 2) {
             if (lookup_kind == MP_MAP_LOOKUP_REMOVE_IF_FOUND) {
                 mp_raise_type_arg(&mp_type_KeyError, args[1]);
+                return NULL;
             } else {
                 value = mp_const_none;
             }
@@ -357,6 +360,7 @@ static mp_obj_t dict_popitem(mp_obj_t self_in) {
     mp_ensure_not_fixed(self);
     if (self->map.used == 0) {
         mp_raise_msg(&mp_type_KeyError, MP_ERROR_TEXT("popitem(): dictionary is empty"));
+        return NULL;
     }
     size_t cur = 0;
     #if MICROPY_PY_COLLECTIONS_ORDEREDDICT
@@ -408,6 +412,7 @@ static mp_obj_t dict_update(size_t n_args, const mp_obj_t *args, mp_map_t *kwarg
                     || value == MP_OBJ_STOP_ITERATION
                     || stop != MP_OBJ_STOP_ITERATION) {
                     mp_raise_ValueError(MP_ERROR_TEXT("dict update sequence has wrong length"));
+                    return NULL;
                 } else {
                     mp_map_lookup(&self->map, key, MP_MAP_LOOKUP_ADD_IF_NOT_FOUND)->value = value;
                 }

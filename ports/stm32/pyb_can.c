@@ -1054,10 +1054,10 @@ void pyb_can_handle_callback(pyb_can_obj_t *self, uint fifo_id, mp_obj_t callbac
         mp_sched_lock();
         gc_lock();
         nlr_buf_t nlr;
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             mp_call_function_2(callback, MP_OBJ_FROM_PTR(self), irq_reason);
             nlr_pop();
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
             // Uncaught exception; disable the callback so it doesn't run again.
             pyb_can_rxcallback(MP_OBJ_FROM_PTR(self), MP_OBJ_NEW_SMALL_INT(fifo_id), mp_const_none);
             mp_printf(MICROPY_ERROR_PRINTER, "uncaught exception in CAN(%u) rx interrupt handler\n", self->can_id);

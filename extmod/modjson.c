@@ -138,6 +138,7 @@ static byte json_stream_next(json_stream_t *s) {
     mp_uint_t ret = s->read(s->stream_obj, &s->cur, 1, &s->errcode);
     if (s->errcode != 0) {
         mp_raise_OSError(s->errcode);
+        return 0;
     }
     if (ret == 0) {
         s->cur = S_EOF;
@@ -354,6 +355,7 @@ success:
 
 fail:
     mp_raise_ValueError(MP_ERROR_TEXT("syntax error in JSON"));
+    return NULL;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(mod_json_load_obj, mod_json_load);
 

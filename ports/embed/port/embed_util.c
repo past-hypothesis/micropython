@@ -44,7 +44,7 @@ void mp_embed_init(void *gc_heap, size_t gc_heap_size, void *stack_top) {
 // Compile and execute the given source script (Python text).
 void mp_embed_exec_str(const char *src) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // Compile, parse and execute the given string.
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
         qstr source_name = lex->source_name;
@@ -52,7 +52,7 @@ void mp_embed_exec_str(const char *src) {
         mp_obj_t module_fun = mp_compile(&parse_tree, source_name, true);
         mp_call_function_0(module_fun);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Uncaught exception: print it out.
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }
@@ -62,7 +62,7 @@ void mp_embed_exec_str(const char *src) {
 #if MICROPY_PERSISTENT_CODE_LOAD
 void mp_embed_exec_mpy(const uint8_t *mpy, size_t len) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         // Execute the given .mpy data.
         mp_module_context_t *ctx = m_new_obj(mp_module_context_t);
         ctx->module.globals = mp_globals_get();
@@ -72,7 +72,7 @@ void mp_embed_exec_mpy(const uint8_t *mpy, size_t len) {
         mp_obj_t f = mp_make_function_from_proto_fun(cm.rc, ctx, MP_OBJ_NULL);
         mp_call_function_0(f);
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Uncaught exception: print it out.
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }

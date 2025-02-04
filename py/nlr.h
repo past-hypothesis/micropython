@@ -50,7 +50,7 @@
 // *FORMAT-OFF*
 
 // If MICROPY_NLR_SETJMP is not enabled then auto-detect the machine arch
-#if !MICROPY_NLR_SETJMP
+#if !MICROPY_NLR_SETJMP && !MICROPY_NLR_WASM
 // A lot of nlr-related things need different treatment on Windows
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define MICROPY_NLR_OS_WINDOWS 1
@@ -101,9 +101,14 @@
         #error Unsupported RISC-V variant.
     #endif
 #else
-    #define MICROPY_NLR_SETJMP (1)
+    // #define MICROPY_NLR_SETJMP (1)
+    #define MICROPY_NLR_WASM (1)
     //#warning "No native NLR support for this arch, using setjmp implementation"
 #endif
+#endif
+
+#if MICROPY_NLR_WASM
+    #define MICROPY_NLR_NUM_REGS (1)
 #endif
 
 // *FORMAT-ON*
@@ -166,6 +171,12 @@ struct _nlr_jump_callback_node_t {
     MP_NLR_RESTORE_PYSTACK(top); \
     *_top_ptr = top->prev; \
 
+#if !MICROPY_NLR_WASM
+    #define NLR_NORETURN NORETURN
+#else
+    #define NLR_NORETURN 
+#endif
+
 #if MICROPY_NLR_SETJMP
 // nlr_push() must be defined as a macro, because "The stack context will be
 // invalidated if the function which called setjmp() returns."
@@ -177,7 +188,7 @@ unsigned int nlr_push(nlr_buf_t *);
 
 unsigned int nlr_push_tail(nlr_buf_t *top);
 void nlr_pop(void);
-NORETURN void nlr_jump(void *val);
+NLR_NORETURN void nlr_jump(void *val);
 
 #if MICROPY_ENABLE_VM_ABORT
 #define nlr_set_abort(buf) MP_STATE_VM(nlr_abort) = buf
@@ -209,6 +220,31 @@ NORETURN void nlr_jump_fail(void *val);
 #endif
 
 #endif
+
+// new exception macros
+// nlr_buf nlr;
+// NLR_PUSH_BLOCK(nlr) {
+//   statement; NLR_CHECK_x();
+//   statement; NLR_CHECK_x();
+//   statement; NLR_CHECK_x();
+// }
+// NLR_PUSH_HANDLER(nlr) {
+//   exception handler; exception ptr is available at nlr.ret_val or MP_STATE_THREAD(nlr_exc)
+// }
+#define NLR_PUSH_BLOCK(nlr) nlr_push(&nlr); if (1) 
+#define NLR_PUSH_HANDLER(nlr) nlr.ret_val = MP_STATE_THREAD(nlr_exc); MP_STATE_THREAD(nlr_exc) = NULL; if (nlr.ret_val) 
+
+#define NLR_RAISE_RV(val) (nlr_raise(val), return)
+#define NLR_RAISE_R0(val) (nlr_raise(val), return 0)
+#define NLR_RAISE_R(val, retval) (nlr_raise(val), return retval)
+
+// todo: NLR_RAISE needs a variant for usage inside the NLR_TRY, with goto instead of a return
+//       (or maybe we can do this manually after a NLR_RAISE())
+
+// these can be added after calling code which can throw exceptions to terminate execution early
+#define NLR_CHECK_RV() if (MP_STATE_THREAD(nlr_exc)) { return; }
+#define NLR_CHECK_R0() if (MP_STATE_THREAD(nlr_exc)) { return 0; }
+#define NLR_CHECK_R(retval) if (MP_STATE_THREAD(nlr_exc)) { return retval; }
 
 // Push a callback on to the linked-list of NLR jump callbacks.  The `node` pointer must
 // be on the C stack.  The `fun` callback will be executed if an NLR jump is taken which

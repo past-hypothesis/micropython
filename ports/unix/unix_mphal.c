@@ -124,7 +124,7 @@ void mp_hal_stdio_mode_orig(void) {
 #if MICROPY_PY_OS_DUPTERM
 static int call_dupterm_read(size_t idx) {
     nlr_buf_t nlr;
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         mp_obj_t read_m[3];
         mp_load_method(MP_STATE_VM(dupterm_objs[idx]), MP_QSTR_read, read_m);
         read_m[2] = MP_OBJ_NEW_SMALL_INT(1);
@@ -141,7 +141,7 @@ static int call_dupterm_read(size_t idx) {
         }
         nlr_pop();
         return *(byte *)bufinfo.buf;
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Temporarily disable dupterm to avoid infinite recursion
         mp_obj_t save_term = MP_STATE_VM(dupterm_objs[idx]);
         MP_STATE_VM(dupterm_objs[idx]) = NULL;

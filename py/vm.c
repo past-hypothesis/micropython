@@ -231,6 +231,7 @@ mp_vm_return_kind_t MICROPY_WRAP_MP_EXECUTE_BYTECODE(mp_execute_bytecode)(mp_cod
     #define DISPATCH() do { \
         TRACE(ip); \
         MARK_EXC_IP_GLOBAL(); \
+        if (MP_STATE_THREAD(nlr_exc)) { mp_sched_exception(MP_STATE_THREAD(nlr_exc)); } \
         TRACE_TICK(ip, sp, false); \
         goto *entry_table[*ip++]; \
     } while (0)
@@ -282,7 +283,7 @@ FRAME_SETUP();
     for (;;) {
         nlr_buf_t nlr;
 outer_dispatch_loop:
-        if (nlr_push(&nlr) == 0) {
+        NLR_PUSH_BLOCK(nlr) {
             // local variables that are not visible to the exception handler
             const byte *ip = code_state->ip;
             mp_obj_t *sp = code_state->sp;
@@ -312,6 +313,7 @@ dispatch_loop:
                 #else
                 TRACE(ip);
                 MARK_EXC_IP_GLOBAL();
+                if (MP_STATE_THREAD(nlr_exc)) { goto exception_handler; } \
                 TRACE_TICK(ip, sp, false);
                 switch (*ip++) {
                 #endif
@@ -1366,9 +1368,14 @@ pending_exception_check:
 
             } // for loop
 
-        } else {
+        } NLR_PUSH_HANDLER(nlr) {
 exception_handler:
             // exception occurred
+
+            if (MP_STATE_THREAD(nlr_exc)) {
+              nlr.ret_val = MP_STATE_THREAD(nlr_exc);
+              MP_STATE_THREAD(nlr_exc) = NULL;
+            }
 
             #if MICROPY_PY_SYS_EXC_INFO
             MP_STATE_VM(cur_exception) = nlr.ret_val;

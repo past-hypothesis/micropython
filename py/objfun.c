@@ -324,6 +324,7 @@ static mp_obj_t fun_bc_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const 
         return result;
     } else { // MP_VM_RETURN_EXCEPTION
         nlr_raise(result);
+        return NULL;
     }
 }
 

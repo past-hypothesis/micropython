@@ -732,10 +732,10 @@ void Handle_EXTI_Irq(uint32_t line) {
                 // any memory allocations.  We must also catch any exceptions.
                 gc_lock();
                 nlr_buf_t nlr;
-                if (nlr_push(&nlr) == 0) {
+                NLR_PUSH_BLOCK(nlr) {
                     mp_call_function_1(*cb, pyb_extint_callback_arg[line]);
                     nlr_pop();
-                } else {
+                } NLR_PUSH_HANDLER(nlr) {
                     // Uncaught exception; disable the callback so it doesn't run again.
                     *cb = mp_const_none;
                     extint_disable(line);

@@ -297,7 +297,7 @@ static void call_py_func_with_lock(ffi_cif *cif, void *ret, void **args, void *u
     #endif
     gc_lock();
 
-    if (nlr_push(&nlr) == 0) {
+    NLR_PUSH_BLOCK(nlr) {
         for (uint i = 0; i < cif->nargs; i++) {
             pyargs[i] = mp_obj_new_int(*(mp_int_t *)args[i]);
         }
@@ -307,7 +307,7 @@ static void call_py_func_with_lock(ffi_cif *cif, void *ret, void **args, void *u
             *(ffi_arg *)ret = mp_obj_int_get_truncated(res);
         }
         nlr_pop();
-    } else {
+    } NLR_PUSH_HANDLER(nlr) {
         // Uncaught exception
         mp_printf(MICROPY_ERROR_PRINTER, "Uncaught exception in FFI callback\n");
         mp_obj_print_exception(MICROPY_ERROR_PRINTER, MP_OBJ_FROM_PTR(nlr.ret_val));
