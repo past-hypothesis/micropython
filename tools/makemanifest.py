@@ -159,7 +159,7 @@ def main():
     MPY_TOOL = VARS["MPY_DIR"] + "/tools/mpy-tool.py"
 
     # Ensure mpy-cross is built
-    if not os.path.exists(MPY_CROSS):
+    if not os.path.exists(MPY_CROSS) and not os.path.exists(MPY_CROSS + ".exe"):
         print("mpy-cross not found at {}, please build it first".format(MPY_CROSS))
         sys.exit(1)
 

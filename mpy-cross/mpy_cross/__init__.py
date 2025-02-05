@@ -137,7 +137,7 @@ def run(args, mpy_cross=None):
     """
     mpy_cross = _find_mpy_cross_binary(mpy_cross)
 
-    if not os.path.exists(mpy_cross):
+    if not os.path.exists(mpy_cross) and not os.path.exists(mpy_cross + ".exe"):
         raise CrossCompileError("mpy-cross binary not found at {}.".format(mpy_cross))
 
     try:
