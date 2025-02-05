@@ -96,7 +96,8 @@ NEAR_API_IMPORT(promise_batch_then) uint64_t promise_batch_then(uint64_t promise
 
 // Promise API actions
 NEAR_API_IMPORT(promise_batch_action_create_account) void promise_batch_action_create_account(uint64_t promise_index);
-NEAR_API_IMPORT(promise_batch_action_deploy_contract) void promise_batch_action_deploy_contract(uint64_t promise_index, uint64_t code_len, uint64_t code_ptr);
+NEAR_API_IMPORT(promise_batch_action_deploy_contract) void promise_batch_action_deploy_contract(
+  uint64_t promise_index, uint64_t code_len, uint64_t code_ptr);
 NEAR_API_IMPORT(promise_batch_action_function_call) void promise_batch_action_function_call(
   uint64_t promise_index, uint64_t function_name_len, uint64_t function_name_ptr,
   uint64_t arguments_len, uint64_t arguments_ptr, uint64_t amount_ptr, uint64_t gas
@@ -117,7 +118,8 @@ NEAR_API_IMPORT(promise_batch_action_add_key_with_function_call) void promise_ba
   uint64_t allowance_ptr, uint64_t receiver_id_len, uint64_t receiver_id_ptr,
   uint64_t function_names_len, uint64_t function_names_ptr
 );
-NEAR_API_IMPORT(promise_batch_action_delete_key) void promise_batch_action_delete_key(uint64_t promise_index, uint64_t public_key_len, uint64_t public_key_ptr);
+NEAR_API_IMPORT(promise_batch_action_delete_key) void promise_batch_action_delete_key(
+  uint64_t promise_index, uint64_t public_key_len, uint64_t public_key_ptr);
 NEAR_API_IMPORT(promise_batch_action_delete_account) void promise_batch_action_delete_account(
   uint64_t promise_index, uint64_t beneficiary_id_len, uint64_t beneficiary_id_ptr
 );
