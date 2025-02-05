@@ -140,7 +140,7 @@ static int handle_uncaught_exception(mp_obj_base_t* exc)
 NORETURN void __wasi_proc_exit(__wasi_exitcode_t code)
 {
   log_buffer_flush();
-  NEAR_ABORT();
+  abort();
 }
 
 __wasi_errno_t __wasi_fd_close(__wasi_fd_t fd)
