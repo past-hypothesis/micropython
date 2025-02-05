@@ -62,7 +62,7 @@ def preprocess():
     def pp(flags):
         def run(files):
             try:
-                return subprocess.check_output(args.pp + flags + files)
+                return subprocess.check_output(args.pp + flags + files, shell=os.environ.get('MSYSTEM', '').upper() in {'MINGW64', 'MINGW32', 'MSYS'})
             except subprocess.CalledProcessError as er:
                 raise PreprocessorError(str(er))
 
