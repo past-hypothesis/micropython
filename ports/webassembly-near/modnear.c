@@ -39,12 +39,6 @@
 
 #include <emscripten/em_macros.h>
 
-static mp_obj_t near_export(mp_obj_t fn)
-{
-  return fn;
-}
-MP_DEFINE_CONST_FUN_OBJ_1(near_export_obj, near_export);
-
 // register id to use for temp data storage for apis that output to a register
 static const uint64_t default_temp_register_id = 0;
 
@@ -183,6 +177,35 @@ mp_obj_t read_default_temp_register_as_str()
 {
   return read_register_as_str(default_temp_register_id);
 }
+
+// @near.export decorator, implemented via AST inspection, no-op here
+static mp_obj_t near_export(mp_obj_t fn)
+{
+  return fn;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_export_obj, near_export);
+
+// test helper, implemented in near.py, no-op here
+static mp_obj_t near_test_method(mp_obj_t contract_path, mp_obj_t method_name, mp_obj_t input)
+{
+  return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_3(near_test_method_obj, near_test_method);
+
+// test helper, implemented in near.py, no-op here
+static mp_obj_t near_build_contract(mp_obj_t contract_path)
+{
+  return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_build_contract_obj, near_build_contract);
+
+// allows inclusion of another contract WASM as bytes, useful for promise contract deployment
+// handled via AST manipulation at the build step, so a no-op here
+static mp_obj_t near_include_contract_wasm(mp_obj_t contract_path)
+{
+  return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_include_contract_wasm_obj, near_include_contract_wasm);
 
 // Registers
 static mp_obj_t near_read_register(mp_obj_t register_id)
@@ -762,7 +785,10 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_alt_bn128_pairing_check_obj, near_alt_bn128_pairi
 static const mp_rom_map_elem_t near_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_near) },
     { MP_ROM_QSTR(MP_QSTR_export), MP_ROM_PTR(&near_export_obj) },
-
+    { MP_ROM_QSTR(MP_QSTR_test_method), MP_ROM_PTR(&near_test_method_obj) },
+    { MP_ROM_QSTR(MP_QSTR_build_contract), MP_ROM_PTR(&near_build_contract_obj) },
+    { MP_ROM_QSTR(MP_QSTR_include_contract_wasm), MP_ROM_PTR(&near_include_contract_wasm_obj) },
+    
     // Registers
     { MP_ROM_QSTR(MP_QSTR_read_register), MP_ROM_PTR(&near_read_register_obj) },
     { MP_ROM_QSTR(MP_QSTR_read_register_as_str), MP_ROM_PTR(&near_read_register_as_str_obj) },
