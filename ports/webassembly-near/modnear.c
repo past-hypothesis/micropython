@@ -148,6 +148,15 @@ static mp_obj_t u64_to_mp_int(uint64_t value)
   }
 }
 
+static uint64_t mp_int_to_u64(mp_obj_t value)
+{
+  if (mp_obj_is_small_int(value)) {
+    return mp_obj_get_int(value);
+  }
+  u128_t result = mp_int_to_u128(value);
+  return result.lo;
+}
+
 mp_obj_t read_register_as_bytes(uint64_t register_id)
 {
   uint64_t len = register_len(register_id);
@@ -199,13 +208,17 @@ static mp_obj_t near_build_contract(mp_obj_t contract_path)
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_build_contract_obj, near_build_contract);
 
-// allows inclusion of another contract WASM as bytes, useful for promise contract deployment
-// handled via AST manipulation at the build step, so a no-op here
-static mp_obj_t near_include_contract_wasm(mp_obj_t contract_path)
+static mp_obj_t near_test_account_id()
 {
   return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_1(near_include_contract_wasm_obj, near_include_contract_wasm);
+MP_DEFINE_CONST_FUN_OBJ_0(near_test_account_id_obj, near_test_account_id);
+
+static mp_obj_t near_test_add_extra_balance()
+{
+  return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_0(near_test_add_extra_balance_obj, near_test_add_extra_balance);
 
 // Registers
 static mp_obj_t near_read_register(mp_obj_t register_id)
@@ -528,21 +541,21 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_promise_batch_create_obj, near_promise_batch_crea
 static mp_obj_t near_promise_batch_then(mp_obj_t promise_index, mp_obj_t account_id)
 {
   near_api_ptr_t acc_id_ptr = get_mp_str_data(account_id);
-  return u64_to_mp_int(promise_batch_then(mp_obj_get_int(promise_index), acc_id_ptr.len, acc_id_ptr.ptr));
+  return u64_to_mp_int(promise_batch_then(mp_int_to_u64(promise_index), acc_id_ptr.len, acc_id_ptr.ptr));
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_then_obj, near_promise_batch_then);
 
 static mp_obj_t near_promise_batch_action_create_account(mp_obj_t promise_index)
 {
-  promise_batch_action_create_account(mp_obj_get_int(promise_index));
+  promise_batch_action_create_account(mp_int_to_u64(promise_index));
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_promise_batch_action_create_account_obj, near_promise_batch_action_create_account);
 
 static mp_obj_t near_promise_batch_action_deploy_contract(mp_obj_t promise_index, mp_obj_t code)
 {
-  near_api_ptr_t code_ptr = get_mp_str_or_bytes_data(code);
-  promise_batch_action_deploy_contract(mp_obj_get_int(promise_index), code_ptr.len, code_ptr.ptr);
+  near_api_ptr_t code_ptr = get_mp_bytes_data(code);
+  promise_batch_action_deploy_contract(mp_int_to_u64(promise_index), code_ptr.len, code_ptr.ptr);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_action_deploy_contract_obj, near_promise_batch_action_deploy_contract);
@@ -553,8 +566,8 @@ static mp_obj_t near_promise_batch_action_function_call(size_t n_args, const mp_
   near_api_ptr_t fn_ptr = get_mp_str_data(function_name);
   near_api_ptr_t args_ptr = get_mp_str_data(arguments);
   u128_t u128_amount = mp_int_to_u128(amount);
-  promise_batch_action_function_call(mp_obj_get_int(promise_index), fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
-    (uint64_t)&u128_amount, mp_obj_get_int(gas));
+  promise_batch_action_function_call(mp_int_to_u64(promise_index), fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
+    (uint64_t)&u128_amount, mp_int_to_u64(gas));
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_batch_action_function_call_obj, 5, 5, near_promise_batch_action_function_call);
@@ -565,8 +578,8 @@ static mp_obj_t near_promise_batch_action_function_call_weight(size_t n_args, co
   near_api_ptr_t fn_ptr = get_mp_str_data(function_name);
   near_api_ptr_t args_ptr = get_mp_str_data(arguments);
   u128_t u128_amount = mp_int_to_u128(amount);
-  promise_batch_action_function_call_weight(mp_obj_get_int(promise_index), fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
-    (uint64_t)&u128_amount, mp_obj_get_int(gas), mp_obj_get_int(weight));
+  promise_batch_action_function_call_weight(mp_int_to_u64(promise_index), fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
+    (uint64_t)&u128_amount, mp_int_to_u64(gas), mp_int_to_u64(weight));
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_batch_action_function_call_weight_obj, 6, 6, near_promise_batch_action_function_call_weight);
@@ -574,7 +587,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_batch_action_function_call_weig
 static mp_obj_t near_promise_batch_action_transfer(mp_obj_t promise_index, mp_obj_t amount)
 {
   u128_t u128_amount = mp_int_to_u128(amount);
-  promise_batch_action_transfer(mp_obj_get_int(promise_index), (uint64_t)&u128_amount);
+  promise_batch_action_transfer(mp_int_to_u64(promise_index), (uint64_t)&u128_amount);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_action_transfer_obj, near_promise_batch_action_transfer);
@@ -583,7 +596,7 @@ static mp_obj_t near_promise_batch_action_stake(mp_obj_t promise_index, mp_obj_t
 {
   u128_t u128_amount = mp_int_to_u128(amount);
   near_api_ptr_t public_key_ptr = get_mp_str_or_bytes_data(pub_key);
-  promise_batch_action_stake(mp_obj_get_int(promise_index), (uint64_t)&u128_amount, public_key_ptr.len, public_key_ptr.ptr);
+  promise_batch_action_stake(mp_int_to_u64(promise_index), (uint64_t)&u128_amount, public_key_ptr.len, public_key_ptr.ptr);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_3(near_promise_batch_action_stake_obj, near_promise_batch_action_stake);
@@ -591,7 +604,7 @@ MP_DEFINE_CONST_FUN_OBJ_3(near_promise_batch_action_stake_obj, near_promise_batc
 static mp_obj_t near_promise_batch_action_add_key_with_full_access(mp_obj_t promise_index, mp_obj_t public_key, mp_obj_t nonce)
 {
   near_api_ptr_t public_key_ptr = get_mp_str_or_bytes_data(public_key);
-  promise_batch_action_add_key_with_full_access(mp_obj_get_int(promise_index), public_key_ptr.len, public_key_ptr.ptr, mp_obj_get_int(nonce));
+  promise_batch_action_add_key_with_full_access(mp_int_to_u64(promise_index), public_key_ptr.len, public_key_ptr.ptr, mp_int_to_u64(nonce));
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_3(near_promise_batch_action_add_key_with_full_access_obj, near_promise_batch_action_add_key_with_full_access);
@@ -605,8 +618,8 @@ static mp_obj_t near_promise_batch_action_add_key_with_function_call(size_t n_ar
   near_api_ptr_t receiver_id_ptr = get_mp_str_data(receiver_id);
   // todo: support function_names passed as list?
   near_api_ptr_t function_names_ptr = get_mp_str_data(function_names);
-  promise_batch_action_add_key_with_function_call(mp_obj_get_int(promise_index),
-    public_key_ptr.len, public_key_ptr.ptr, mp_obj_get_int(nonce), (uint64_t)&u128_allowance,
+  promise_batch_action_add_key_with_function_call(mp_int_to_u64(promise_index),
+    public_key_ptr.len, public_key_ptr.ptr, mp_int_to_u64(nonce), (uint64_t)&u128_allowance,
     receiver_id_ptr.len, receiver_id_ptr.ptr, function_names_ptr.len, function_names_ptr.ptr);
   return mp_const_none;
 }
@@ -615,7 +628,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_batch_action_add_key_with_funct
 static mp_obj_t near_promise_batch_action_delete_key(mp_obj_t promise_index, mp_obj_t public_key)
 {
   near_api_ptr_t public_key_ptr = get_mp_str_or_bytes_data(public_key);
-  promise_batch_action_delete_key(mp_obj_get_int(promise_index), public_key_ptr.len, public_key_ptr.ptr);
+  promise_batch_action_delete_key(mp_int_to_u64(promise_index), public_key_ptr.len, public_key_ptr.ptr);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_action_delete_key_obj, near_promise_batch_action_delete_key);
@@ -623,7 +636,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_action_delete_key_obj, near_promise
 static mp_obj_t near_promise_batch_action_delete_account(mp_obj_t promise_index, mp_obj_t beneficiary_id)
 {
   near_api_ptr_t beneficiary_id_ptr = get_mp_str_or_bytes_data(beneficiary_id);
-  promise_batch_action_delete_account(mp_obj_get_int(promise_index), beneficiary_id_ptr.len, beneficiary_id_ptr.ptr);
+  promise_batch_action_delete_account(mp_int_to_u64(promise_index), beneficiary_id_ptr.len, beneficiary_id_ptr.ptr);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_promise_batch_action_delete_account_obj, near_promise_batch_action_delete_account);
@@ -787,7 +800,8 @@ static const mp_rom_map_elem_t near_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_export), MP_ROM_PTR(&near_export_obj) },
     { MP_ROM_QSTR(MP_QSTR_test_method), MP_ROM_PTR(&near_test_method_obj) },
     { MP_ROM_QSTR(MP_QSTR_build_contract), MP_ROM_PTR(&near_build_contract_obj) },
-    { MP_ROM_QSTR(MP_QSTR_include_contract_wasm), MP_ROM_PTR(&near_include_contract_wasm_obj) },
+    { MP_ROM_QSTR(MP_QSTR_test_account_id), MP_ROM_PTR(&near_test_account_id_obj) },
+    { MP_ROM_QSTR(MP_QSTR_test_add_extra_balance), MP_ROM_PTR(&near_test_add_extra_balance_obj) },
     
     // Registers
     { MP_ROM_QSTR(MP_QSTR_read_register), MP_ROM_PTR(&near_read_register_obj) },
