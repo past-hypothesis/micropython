@@ -468,7 +468,8 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_log_utf8_obj, near_log_utf8);
 
 static mp_obj_t near_log_utf16(mp_obj_t msg)
 {
-  NEAR_ABORT_MSG("not implemented");
+  near_api_ptr_t msg_ptr = get_mp_bytes_data(msg);
+  log_utf16(msg_ptr.len, msg_ptr.ptr);
   return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_log_utf16_obj, near_log_utf16);
