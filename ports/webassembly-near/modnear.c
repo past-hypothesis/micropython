@@ -460,7 +460,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_panic_utf8_obj, near_panic_utf8);
 
 static mp_obj_t near_log_utf8(mp_obj_t msg)
 {
-  near_api_ptr_t msg_ptr = get_mp_str_data(msg);
+  near_api_ptr_t msg_ptr = get_mp_str_or_bytes_data(msg);
   log_utf8(msg_ptr.len, msg_ptr.ptr);
   return mp_const_none;
 }
