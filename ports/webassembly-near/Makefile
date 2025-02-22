@@ -28,13 +28,10 @@ INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 
-# List of functions to be exported from the WASM assembly (prefixed with _)
-#EXPORTED_FUNCTIONS += "_hello_world"
-
 CFLAGS += -std=c99 -Wall -Werror -Wdouble-promotion -Wfloat-conversion 
 CFLAGS += -fdata-sections -ffunction-sections -sSUPPORT_LONGJMP=0 -mno-bulk-memory -mno-nontrapping-fptoint
-CFLAGS += -O2 -DNDEBUG
-# CFLAGS += -O2 -DMICROPY_DEBUG_VERBOSE
+CFLAGS += -Oz -DNDEBUG
+# CFLAGS += -DMICROPY_DEBUG_VERBOSE
 CFLAGS += $(INC)
 
 LDFLAGS += -Wl,--gc-sections -sSTANDALONE_WASM=1 -sALLOW_MEMORY_GROWTH=0 -sWASM_BIGINT=1 -sSUPPORT_LONGJMP=0 -sERROR_ON_UNDEFINED_SYMBOLS=0
