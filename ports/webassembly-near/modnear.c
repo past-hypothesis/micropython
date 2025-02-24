@@ -748,7 +748,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_storage_remove_result_obj, near_storage_remove_re
 static mp_obj_t near_storage_has_key(mp_obj_t key)
 {
   near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
-  return u64_to_mp_int(storage_has_key(key_ptr.len, key_ptr.ptr));
+  return storage_has_key(key_ptr.len, key_ptr.ptr) > 0 ? mp_const_true : mp_const_false;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_storage_has_key_obj, near_storage_has_key);
 
