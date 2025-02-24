@@ -697,28 +697,53 @@ static mp_obj_t near_storage_write(mp_obj_t key, mp_obj_t value)
   near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
   near_api_ptr_t value_ptr = get_mp_str_or_bytes_data(value);
   uint64_t result = storage_write(key_ptr.len, key_ptr.ptr, value_ptr.len, value_ptr.ptr, default_temp_register_id);
-  mp_obj_t items[] = { u64_to_mp_int(result), result == 1 ? read_default_temp_register_as_bytes() : mp_const_none };
-  return mp_obj_new_tuple(2, items);
+  return result == 1 ? read_default_temp_register_as_bytes() : mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_2(near_storage_write_obj, near_storage_write);
 
+static mp_obj_t near_storage_write_result(mp_obj_t key, mp_obj_t value)
+{
+  near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
+  near_api_ptr_t value_ptr = get_mp_str_or_bytes_data(value);
+  uint64_t result = storage_write(key_ptr.len, key_ptr.ptr, value_ptr.len, value_ptr.ptr, default_temp_register_id);
+  mp_obj_t items[] = { u64_to_mp_int(result), result == 1 ? read_default_temp_register_as_bytes() : mp_const_none };
+  return mp_obj_new_tuple(2, items);
+}
+MP_DEFINE_CONST_FUN_OBJ_2(near_storage_write_result_obj, near_storage_write_result);
+
 static mp_obj_t near_storage_read(mp_obj_t key)
+{
+  near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
+  uint64_t result = storage_read(key_ptr.len, key_ptr.ptr, default_temp_register_id);
+  return result == 1 ? read_default_temp_register_as_bytes() : mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_read_obj, near_storage_read);
+
+static mp_obj_t near_storage_read_result(mp_obj_t key)
 {
   near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
   uint64_t result = storage_read(key_ptr.len, key_ptr.ptr, default_temp_register_id);
   mp_obj_t items[] = { u64_to_mp_int(result), result == 1 ? read_default_temp_register_as_bytes() : mp_const_none };
   return mp_obj_new_tuple(2, items);
 }
-MP_DEFINE_CONST_FUN_OBJ_1(near_storage_read_obj, near_storage_read);
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_read_result_obj, near_storage_read_result);
 
 static mp_obj_t near_storage_remove(mp_obj_t key)
+{
+  near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
+  uint64_t result = storage_remove(key_ptr.len, key_ptr.ptr, default_temp_register_id);
+  return result == 1 ? read_default_temp_register_as_bytes() : mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_remove_obj, near_storage_remove);
+
+static mp_obj_t near_storage_remove_result(mp_obj_t key)
 {
   near_api_ptr_t key_ptr = get_mp_str_or_bytes_data(key);
   uint64_t result = storage_remove(key_ptr.len, key_ptr.ptr, default_temp_register_id);
   mp_obj_t items[] = { u64_to_mp_int(result), result == 1 ? read_default_temp_register_as_bytes() : mp_const_none };
   return mp_obj_new_tuple(2, items);
 }
-MP_DEFINE_CONST_FUN_OBJ_1(near_storage_remove_obj, near_storage_remove);
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_remove_result_obj, near_storage_remove_result);
 
 static mp_obj_t near_storage_has_key(mp_obj_t key)
 {
@@ -746,13 +771,24 @@ static mp_obj_t near_storage_iter_next(mp_obj_t iterator_id)
 {
   uint64_t result = storage_iter_next(mp_obj_get_int(iterator_id), default_temp_register_id, default_temp_register_id + 1);
   mp_obj_t items[] = {
+    result == 1 ? read_register_as_bytes(default_temp_register_id) : mp_const_none,
+    result == 1 ? read_register_as_bytes(default_temp_register_id + 1) : mp_const_none
+  };
+  return mp_obj_new_tuple(2, items);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_iter_next_obj, near_storage_iter_next);
+
+static mp_obj_t near_storage_iter_next_result(mp_obj_t iterator_id)
+{
+  uint64_t result = storage_iter_next(mp_obj_get_int(iterator_id), default_temp_register_id, default_temp_register_id + 1);
+  mp_obj_t items[] = {
     u64_to_mp_int(result),
     result == 1 ? read_register_as_bytes(default_temp_register_id) : mp_const_none,
     result == 1 ? read_register_as_bytes(default_temp_register_id + 1) : mp_const_none
   };
   return mp_obj_new_tuple(3, items);
 }
-MP_DEFINE_CONST_FUN_OBJ_1(near_storage_iter_next_obj, near_storage_iter_next);
+MP_DEFINE_CONST_FUN_OBJ_1(near_storage_iter_next_result_obj, near_storage_iter_next_result);
 
 // Validator API
 static mp_obj_t near_validator_stake(mp_obj_t account_id)
@@ -871,12 +907,16 @@ static const mp_rom_map_elem_t near_module_globals_table[] = {
 
     // Storage API
     { MP_ROM_QSTR(MP_QSTR_storage_write), MP_ROM_PTR(&near_storage_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_storage_write_result), MP_ROM_PTR(&near_storage_write_result_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_read), MP_ROM_PTR(&near_storage_read_obj) },
+    { MP_ROM_QSTR(MP_QSTR_storage_read_result), MP_ROM_PTR(&near_storage_read_result_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_remove), MP_ROM_PTR(&near_storage_remove_obj) },
+    { MP_ROM_QSTR(MP_QSTR_storage_remove_result), MP_ROM_PTR(&near_storage_remove_result_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_has_key), MP_ROM_PTR(&near_storage_has_key_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_iter_prefix), MP_ROM_PTR(&near_storage_iter_prefix_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_iter_range), MP_ROM_PTR(&near_storage_iter_range_obj) },
     { MP_ROM_QSTR(MP_QSTR_storage_iter_next), MP_ROM_PTR(&near_storage_iter_next_obj) },
+    { MP_ROM_QSTR(MP_QSTR_storage_iter_next_result), MP_ROM_PTR(&near_storage_iter_next_result_obj) },
 
     // Validator API
     { MP_ROM_QSTR(MP_QSTR_validator_stake), MP_ROM_PTR(&near_validator_stake_obj) },
