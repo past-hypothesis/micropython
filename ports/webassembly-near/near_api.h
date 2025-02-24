@@ -45,6 +45,7 @@ NEAR_API_IMPORT(signer_account_pk) void signer_account_pk(uint64_t register_id);
 NEAR_API_IMPORT(predecessor_account_id) void predecessor_account_id(uint64_t register_id);
 NEAR_API_IMPORT(input) void input(uint64_t register_id);
 NEAR_API_IMPORT(block_index) uint64_t block_index();
+NEAR_API_IMPORT(block_height) uint64_t block_height();
 NEAR_API_IMPORT(block_timestamp) uint64_t block_timestamp();
 NEAR_API_IMPORT(epoch_height) uint64_t epoch_height();
 NEAR_API_IMPORT(storage_usage) uint64_t storage_usage();
@@ -143,11 +144,6 @@ NEAR_API_IMPORT(storage_write) uint64_t storage_write(
 NEAR_API_IMPORT(storage_read) uint64_t storage_read(uint64_t key_len, uint64_t key_ptr, uint64_t register_id);
 NEAR_API_IMPORT(storage_remove) uint64_t storage_remove(uint64_t key_len, uint64_t key_ptr, uint64_t register_id);
 NEAR_API_IMPORT(storage_has_key) uint64_t storage_has_key(uint64_t key_len, uint64_t key_ptr);
-NEAR_API_IMPORT(storage_iter_prefix) uint64_t storage_iter_prefix(uint64_t prefix_len, uint64_t prefix_ptr);
-NEAR_API_IMPORT(storage_iter_range) uint64_t storage_iter_range(
-  uint64_t start_len, uint64_t start_ptr, uint64_t end_len, uint64_t end_ptr
-);
-NEAR_API_IMPORT(storage_iter_next) uint64_t storage_iter_next(uint64_t iterator_id, uint64_t key_register_id, uint64_t value_register_id);
 
 // Validator API
 NEAR_API_IMPORT(validator_stake) void validator_stake(uint64_t account_id_len, uint64_t account_id_ptr, uint64_t stake_ptr);
