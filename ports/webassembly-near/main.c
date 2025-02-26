@@ -97,8 +97,14 @@ NORETURN void near_abort_impl(const char *msg, const char *func, const char *fil
     printf("NEAR_ABORT() called by %s() (%s:%d), terminating\n", func, filename, line);
   }
   log_buffer_flush();
-  // near_abort((uint32_t)msg, (uint32_t)filename, line, col); // this seems to result in an infinite loop
-  abort();
+  // near_abort doesn't seem to work as we expect (should msg and filename to in utf-16?), so use panic_utf8() instead for now
+  if (msg) {
+    panic_utf8(strlen(msg), (uint64_t)msg);
+  }
+  else {
+    panic();
+  }
+  // near_abort((uint32_t)(msg ? msg : "(null)"), (uint32_t)filename, line, col); // this seems to result in incorrect log message length
 }
 
 void emscripten_scan_registers(em_scan_func func)

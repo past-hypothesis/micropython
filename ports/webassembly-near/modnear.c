@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "py/runtime.h"
 #include "py/obj.h"
@@ -460,6 +461,14 @@ static mp_obj_t near_log_utf8(mp_obj_t msg)
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_log_utf8_obj, near_log_utf8);
 
+static mp_obj_t near_log(mp_obj_t msg)
+{
+  near_api_ptr_t msg_ptr = get_mp_str_or_bytes_data(msg);
+  log_utf8(msg_ptr.len, msg_ptr.ptr);
+  return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(near_log_obj, near_log);
+
 static mp_obj_t near_log_utf16(mp_obj_t msg)
 {
   near_api_ptr_t msg_ptr = get_mp_bytes_data(msg);
@@ -470,11 +479,20 @@ MP_DEFINE_CONST_FUN_OBJ_1(near_log_utf16_obj, near_log_utf16);
 
 static mp_obj_t near_abort_(size_t n_args, const mp_obj_t* args)
 {
-  mp_obj_t msg = args[0]; mp_obj_t filename = args[1]; mp_obj_t line = args[2]; mp_obj_t col = args[3];
+  // near_abort doesn't seem to work as we expect (should msg and filename be in utf-16?), so use panic_utf8() instead for now
+  mp_obj_t msg = args[0];
   near_api_ptr_t msg_ptr = get_mp_str_data(msg);
-  near_api_ptr_t filename_ptr = get_mp_str_data(filename);
-  near_abort(msg_ptr.ptr, filename_ptr.ptr, mp_obj_get_int(line), mp_obj_get_int(col));
+  panic_utf8(msg_ptr.len, msg_ptr.ptr);
   return mp_const_none; // Unreachable
+  // mp_obj_t msg = args[0]; mp_obj_t filename = args[1]; mp_obj_t line = args[2]; mp_obj_t col = args[3];
+  // near_api_ptr_t msg_ptr = get_mp_str_data(msg);
+  // char *msg_c = malloc(msg_ptr.len + 1);
+  // memcpy(msg_c, (const void*)msg_ptr.ptr, msg_ptr.len); msg_c[msg_ptr.len] = 0;
+  // near_api_ptr_t filename_ptr = get_mp_str_data(filename);
+  // char *filename_c = malloc(filename_ptr.len + 1);
+  // memcpy(filename_c, (const void*)filename_ptr.ptr, filename_ptr.len); filename_c[filename_ptr.len] = 0;
+  // near_abort((uint32_t)msg_c, (uint32_t)filename_c, mp_obj_get_int(line), mp_obj_get_int(col));
+  // return mp_const_none; // Unreachable
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_abort_obj, 4, 4, near_abort_);
 
@@ -487,7 +505,7 @@ static mp_obj_t near_promise_create(size_t n_args, const mp_obj_t* args)
   near_api_ptr_t args_ptr = get_mp_str_data(arguments);
   u128_t u128_amount = mp_int_to_u128(amount);
   return u64_to_mp_int(promise_create(acc_id_ptr.len, acc_id_ptr.ptr, fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
-    (uint64_t)&u128_amount, mp_obj_get_int(gas)));
+    (uint64_t)&u128_amount, mp_int_to_u64(gas)));
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_create_obj, 5, 5, near_promise_create);
 
@@ -500,7 +518,7 @@ static mp_obj_t near_promise_then(size_t n_args, const mp_obj_t* args)
   near_api_ptr_t args_ptr = get_mp_str_data(arguments);
   u128_t u128_amount = mp_int_to_u128(amount);
   return u64_to_mp_int(promise_then(mp_obj_get_int(promise_index), acc_id_ptr.len, acc_id_ptr.ptr, fn_ptr.len, fn_ptr.ptr, args_ptr.len, args_ptr.ptr,
-    (uint64_t)&u128_amount, mp_obj_get_int(gas)));
+    (uint64_t)&u128_amount, mp_int_to_u64(gas)));
 }
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(near_promise_then_obj, 6, 6, near_promise_then);
 
@@ -807,6 +825,7 @@ static const mp_rom_map_elem_t near_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_panic), MP_ROM_PTR(&near_panic_obj) },
     { MP_ROM_QSTR(MP_QSTR_panic_utf8), MP_ROM_PTR(&near_panic_utf8_obj) },
     { MP_ROM_QSTR(MP_QSTR_log_utf8), MP_ROM_PTR(&near_log_utf8_obj) },
+    { MP_ROM_QSTR(MP_QSTR_log), MP_ROM_PTR(&near_log_obj) },
     { MP_ROM_QSTR(MP_QSTR_log_utf16), MP_ROM_PTR(&near_log_utf16_obj) },
     { MP_ROM_QSTR(MP_QSTR_abort), MP_ROM_PTR(&near_abort_obj) },
 
