@@ -40,7 +40,7 @@
 
 #include <emscripten/em_macros.h>
 
-// register id to use for temp data storage for apis that output to a register
+ // register id to use for temp data storage for apis that output to a register
 static const uint64_t default_temp_register_id = 0;
 
 // helper functions
@@ -106,7 +106,7 @@ static u128_t mp_int_to_u128(mp_obj_t value)
     mp_raise_TypeError("Input must be an integer");
     return result;
   }
-  mpz_t z;
+  mpz_t z = { 0 };
   if (mp_obj_is_small_int(value)) {
     mpz_init_from_int(&z, MP_OBJ_SMALL_INT_VALUE(value));
   }
@@ -527,8 +527,8 @@ static mp_obj_t near_promise_and(mp_obj_t promise_indices)
   if (!mp_obj_is_type(promise_indices, &mp_type_list)) {
     mp_raise_TypeError("promise_indices should be a list of promise indices");
   }
-  mp_obj_list_t *list = MP_OBJ_TO_PTR(promise_indices);
-  uint64_t *promise_indices_buf = malloc(list->len * sizeof(uint64_t));
+  mp_obj_list_t* list = MP_OBJ_TO_PTR(promise_indices);
+  uint64_t* promise_indices_buf = malloc(list->len * sizeof(uint64_t));
   for (size_t i = 0; i < list->len; i++) {
     mp_obj_t item = list->items[i];
     if (!mp_obj_is_int(item)) {
@@ -785,7 +785,7 @@ static const mp_rom_map_elem_t near_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_build_contract), MP_ROM_PTR(&near_build_contract_obj) },
     { MP_ROM_QSTR(MP_QSTR_test_account_id), MP_ROM_PTR(&near_test_account_id_obj) },
     { MP_ROM_QSTR(MP_QSTR_test_add_extra_balance), MP_ROM_PTR(&near_test_add_extra_balance_obj) },
-    
+
     // Registers
     { MP_ROM_QSTR(MP_QSTR_read_register), MP_ROM_PTR(&near_read_register_obj) },
     { MP_ROM_QSTR(MP_QSTR_read_register_as_str), MP_ROM_PTR(&near_read_register_as_str_obj) },
