@@ -35,7 +35,10 @@ unsigned int nlr_push(nlr_buf_t *nlr) {
 
 void nlr_jump(void *val) {
     // mp_obj_print_exception(&mp_stderr_print, MP_OBJ_FROM_PTR(val));
+    nlr_buf_t *prev_top = MP_STATE_THREAD(nlr_top);
     MP_NLR_JUMP_HEAD(val, top);
+    // we don't need to assign top to top->prev as MP_NLR_JUMP_HEAD() above does for the nlrwasm case, so restore the original value here
+    MP_STATE_THREAD(nlr_top) = prev_top;
     MP_STATE_THREAD(nlr_exc) = val;
 }
 

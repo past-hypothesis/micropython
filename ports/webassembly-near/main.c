@@ -285,6 +285,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 void nlr_jump_fail(void* val)
 {
+  printf("nlr_jump_fail(%08x)\n", (unsigned int)(uintptr_t)val);
   log_buffer_flush();
   NEAR_ABORT();
 }
