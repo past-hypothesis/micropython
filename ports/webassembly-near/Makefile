@@ -52,7 +52,9 @@ SRC_SHARED = $(addprefix shared/,\
 SRC_C += \
 	main.c \
 	mphalport.c \
-	modnear.c
+	modnear.c \
+	cmp.c \
+	modmsgpack.c
 
 # List of sources for qstr extraction.
 SRC_QSTR += $(SRC_C) $(SRC_SHARED)
