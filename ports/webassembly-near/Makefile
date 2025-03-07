@@ -53,6 +53,7 @@ SRC_C += \
 	main.c \
 	mphalport.c \
 	modnear.c \
+	modrandom.c \
 	cmp.c \
 	modmsgpack.c
 

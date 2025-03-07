@@ -85,9 +85,10 @@
 #define MICROPY_VARIANT_ENABLE_JS_HOOK (0)
 #endif
 
-unsigned int mp_random_seed_init(void);
-#define MICROPY_PY_RANDOM (1)
-#define MICROPY_PY_RANDOM_SEED_INIT_FUNC mp_random_seed_init()
+#define MICROPY_PY_RANDOM (0)  // Disable original random module
+#define SEED_ON_IMPORT (1)     // Enable automatic seeding
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1) // Enable urandom extra functions
+#define MICROPY_PY_BUILTINS_FLOAT (1) // Enable float support
 
 #if MICROPY_VARIANT_ENABLE_JS_HOOK
 #define MICROPY_VM_HOOK_COUNT (10)

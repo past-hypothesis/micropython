@@ -360,27 +360,6 @@ static mp_obj_t near_random_seed()
 }
 MP_DEFINE_CONST_FUN_OBJ_0(near_random_seed_obj, near_random_seed);
 
-// Random seed function for MicroPython to use
-unsigned int mp_random_seed_init(void) {
-  // Call NEAR API to get random seed in register
-  random_seed(default_temp_register_id);
-  
-  // Just grab the first 4 bytes (or less) from the register
-  unsigned int seed = 0;
-  uint64_t len = register_len(default_temp_register_id);
-  
-  // If we got data, read the first few bytes into our seed
-  if (len > 0) {
-    // Only read up to sizeof(unsigned int) bytes
-    uint8_t buffer[sizeof(unsigned int)];
-    read_register(default_temp_register_id, (uint64_t)buffer);
-    
-    // Simple copy of bytes into an unsigned int
-    memcpy(&seed, buffer, (len < sizeof(unsigned int)) ? len : sizeof(unsigned int));
-  }
-  
-  return seed;
-}
 
 static mp_obj_t near_hmac_impl(mp_obj_t value, void (*hmac_fn)(uint64_t value_len, uint64_t value_ptr, uint64_t register_id))
 {
