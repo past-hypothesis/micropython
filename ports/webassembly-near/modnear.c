@@ -360,7 +360,6 @@ static mp_obj_t near_random_seed()
 }
 MP_DEFINE_CONST_FUN_OBJ_0(near_random_seed_obj, near_random_seed);
 
-
 static mp_obj_t near_hmac_impl(mp_obj_t value, void (*hmac_fn)(uint64_t value_len, uint64_t value_ptr, uint64_t register_id))
 {
   near_api_ptr_t value_ptr = get_mp_bytes_data(value);
