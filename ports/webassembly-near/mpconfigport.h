@@ -85,6 +85,10 @@
 #define MICROPY_VARIANT_ENABLE_JS_HOOK (0)
 #endif
 
+unsigned int mp_random_seed_init(void);
+#define MICROPY_PY_RANDOM (1)
+#define MICROPY_PY_RANDOM_SEED_INIT_FUNC mp_random_seed_init()
+
 #if MICROPY_VARIANT_ENABLE_JS_HOOK
 #define MICROPY_VM_HOOK_COUNT (10)
 #define MICROPY_VM_HOOK_INIT static uint vm_hook_divisor = MICROPY_VM_HOOK_COUNT;
