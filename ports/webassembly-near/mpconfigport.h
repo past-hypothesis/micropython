@@ -85,6 +85,11 @@
 #define MICROPY_VARIANT_ENABLE_JS_HOOK (0)
 #endif
 
+#define MICROPY_PY_RANDOM (0)  // Disable original random module
+#define SEED_ON_IMPORT (1)     // Enable automatic seeding
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1) // Enable urandom extra functions
+#define MICROPY_PY_BUILTINS_FLOAT (1) // Enable float support
+
 #if MICROPY_VARIANT_ENABLE_JS_HOOK
 #define MICROPY_VM_HOOK_COUNT (10)
 #define MICROPY_VM_HOOK_INIT static uint vm_hook_divisor = MICROPY_VM_HOOK_COUNT;
