@@ -682,16 +682,18 @@ MP_DEFINE_CONST_FUN_OBJ_0(near_promise_results_count_obj, near_promise_results_c
 
 static mp_obj_t near_promise_result(mp_obj_t result_idx)
 {
-  uint64_t result = promise_result(mp_obj_get_int(result_idx), default_temp_register_id);
-  mp_obj_t items[] = { u64_to_mp_int(result), read_default_temp_register_as_bytes() };
+  uint64_t status = promise_result(mp_obj_get_int(result_idx), default_temp_register_id);
+  mp_obj_t result_data = (status == 1) ? read_default_temp_register_as_bytes() : mp_const_none;
+  mp_obj_t items[] = { u64_to_mp_int(status), result_data };
   return mp_obj_new_tuple(2, items);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_promise_result_obj, near_promise_result);
 
 static mp_obj_t near_promise_result_as_str(mp_obj_t result_idx)
 {
-  uint64_t result = promise_result(mp_obj_get_int(result_idx), default_temp_register_id);
-  mp_obj_t items[] = { u64_to_mp_int(result), read_default_temp_register_as_str() };
+  uint64_t status = promise_result(mp_obj_get_int(result_idx), default_temp_register_id);
+  mp_obj_t result_data = (status == 1) ? read_default_temp_register_as_str() : mp_const_none;
+  mp_obj_t items[] = { u64_to_mp_int(status), result_data };
   return mp_obj_new_tuple(2, items);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(near_promise_result_as_str_obj, near_promise_result_as_str);
